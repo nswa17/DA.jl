@@ -1,7 +1,13 @@
 #DA algorythm
 #todo: @time to compare recursive version and normal version
+#    : test function
+#    : make code readable
 
 #recursive version
+#
+#input: m, n, 1d array of m_prefs, 1d array of f_prefs
+#output: m-elements 1d array, n-elements 1d array
+#
 function call_match(m, n, m_prefs, f_prefs)
     males = 1:m
     females = 1:n
