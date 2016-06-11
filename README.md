@@ -7,7 +7,13 @@ DA
     : module
 
 DA.call_match
-    : (m, n, m_prefs, n_prefs) ->
+    : (m, n, m_prefs, f_prefs) -> matched_males_list, matched_females_list
+
+DA.check_data
+    : (m, n, m_prefs, f_prefs) -> throw an error if any
+
+DA.generate_random_preference_data
+    : (m, n) -> (m_prefs, f_prefs)
 
 ## an example
 
@@ -25,4 +31,5 @@ f(1.2)  # => 0.1386...
 f([1.2, 1.3, 1.4])  # => [0.138629, 0.207944, 0.2772592]
 
 f([1.5 2.5; 3.5 4.5]) # => [0.346574 0.89588; 1.24245 1.49787]
+
 ```

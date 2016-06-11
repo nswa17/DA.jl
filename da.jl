@@ -1,15 +1,16 @@
 #DA algorithm
 #todo: @time to compare recursive version and normal version
-#    : test function
-#    : order
-#    : what if m_pointers[i] exceeds n
 #    : change arrange_m_offers into ~
-#    : check function
 #recursive version
 #
 
 module DA
-    export call_match
+    export call_match, check_data, generate_random_preference_data
+
+function generate_random_preference_data(m, n)
+    m_prefs = Array(Int, n+1, m)
+    f_prefs = Array(Int, m+1, n)
+end
 
 function call_match(m::Int, n::Int, m_prefs, f_prefs)
     #m != length(m_prefs) || n != length(f_prefs) && error("the size of the ")####
@@ -24,7 +25,7 @@ function call_match(m::Int, n::Int, m_prefs, f_prefs)
     return convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)#########
 end
 
-function check_data(m, n, m_prefs, f_prefs)
+function check_data(m::Int, n::Int, m_prefs, f_prefs)
     size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
     size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
     all([set(m_pref) for m_pref in m_prefs] .== set(0:n)) && error("there must be no same preference about f")
