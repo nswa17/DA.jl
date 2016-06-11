@@ -45,7 +45,6 @@ function generate_random_preference_data(m, n)
 end
 
 function call_match(m::Int, n::Int, m_prefs, f_prefs, rec=false)
-    #m != length(m_prefs) || n != length(f_prefs) && error("the size of the ")####
     m_pointers = zeros(Int, m)
     f_pointers = Array(Int, n)
     f_pointers = [findfirst(f_prefs[:, j], 0) for j in 1:n]
@@ -55,7 +54,7 @@ function call_match(m::Int, n::Int, m_prefs, f_prefs, rec=false)
     best_male_pointers = zeros(Int, n)
 
     f_pointers = rec ? recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers) : da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)
-    return convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)#########
+    return convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
 end
 
 function check_data(m::Int, n::Int, m_prefs, f_prefs)
@@ -107,7 +106,7 @@ function get_best_male_pointers!(m, n, m_offers, f_prefs, best_m_pointers)
 end
 
 
-function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched, best_male_pointers)######a bug is here
+function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched, best_male_pointers)
     get_best_male_pointers!(m, n, m_offers, f_prefs, best_male_pointers)
     for j in 1:n
         if f_pointers[j] > best_male_pointers[j] && best_male_pointers[j] != 0
@@ -120,7 +119,7 @@ function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched, best_
     end
 end
 
-function recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)#m offers to f
+function recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)
     proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
     #println("called:0")
     create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
@@ -134,7 +133,7 @@ function recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_ma
     end
 end
 
-function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)#m offers to f
+function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)
     while any(m_matched) == false
         proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
         #println("called:0")
