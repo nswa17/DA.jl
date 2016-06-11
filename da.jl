@@ -8,6 +8,7 @@
 #    : change arrange_m_offers into ~
 #    : error
 #    : bug if call_match(3, 3, Int[1 2 3; 2 1 3; 2 3 1], Int[1 2 3; 2 1 3; 1 2 3])
+#    : check function
 
 #recursive version
 #
@@ -18,7 +19,8 @@
 function call_match(m::Int, n::Int, m_prefs, f_prefs)
     #m != length(m_prefs) || n != length(f_prefs) && error("the size of the ")####
     m_pointers = zeros(Int, m)
-    f_pointers = zeros(Int, n)
+    f_pointers = Array(Int, n)
+    f_pointers = [findfirst(f_prefs[:, j], 0) for j in 1:n]
 
     m_matched = falses(m)
     m_offers = zeros(Int, m)
@@ -51,33 +53,34 @@ function create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
     end
 end
 
-function arrange_offers(m, n, m_offers)###need conversion of arranged offer to pointer_arranged_offer
-    arranged_offers = [Int[] for i in 1:n]
+function get_best_male_pointers(m, n, m_offers, f_prefs)
+    best_m_pointers_offererd = zeros(Int, n)
     for j in 1:n
-        arranged_offers[j] = findin(m_offers, j)#findin returns indexes in one dimensional array
+        arranged_offer = findin(m_offers, j)#findin returns indexes in one dimensional array
+        if !isempty(arranged_offer)
+            best_m_pointers_offererd[j] = minimum(map(j -> findfirst(f_prefs[:, j], j), arranged_offer))
+        end
     end
-    return arranged_offers
+    return best_m_pointers_offererd
 end
 
-function best_male(f_pref, arranged_offer)
-    println(f_pref, arranged_offer)
-    if isempty(arranged_offer)
-        return 0
-    else
-        return minimum(arranged_offer)
-    end
-end
 
 function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)######a bug is here
-    arranged_offers = arrange_offers(m, n, m_offers)
-    println(arranged_offers) #m_offers[i] is the male i's favorite female
+    #arranged_offers = arrange_offers(m, n, m_offers)
+    #println(arranged_offers) #m_offers[i] is the male i's favorite female
+    best_male_pointers = get_best_male_pointers(m, n, m_offers, f_prefs)
     for j in 1:n
-        argmax_in_offering_males = best_male(f_prefs[:, j], arranged_offers[j])
-        println(argmax_in_offering_males)
-        if f_pointers[j] < argmax_in_offering_males
-            m_matched[argmax_in_offering_males] = true
-            f_pointers[j] = argmax_in_offering_males#findfirst returns zero if it couldn't find the 2nd argument in the 1st argument.#could be an error
+        if f_pointers[j] > best_male_pointers[j] && best_male_pointers[j] != 0
+            m_matched[f_prefs[best_male_pointers[j], j]] = true
+            m_matched[f_prefs[f_pointers[j], j]] = false
+            println("m_matched")
+            println(m_matched)
+            f_pointers[j] = best_male_pointers[j]#findfirst returns zero if it couldn't find the 2nd argument in the 1st argument.#could be an error
+        elseif f_pointers[j] == 0 && best_male_pointers[j] != 0
+            m_matched[f_prefs[best_male_pointers[j], j]] = true
+            f_pointers[j] = best_male_pointers[j]
         end
+        println(f_pointers)
     end
 end
 
@@ -88,9 +91,9 @@ function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_o
     println("called:1")
 
     decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
-    println(f_pointers)
     println("called:2")
 
+    println(m_matched)
     if all(m_matched) == true
         return f_pointers
     else
