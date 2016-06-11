@@ -2,6 +2,9 @@
 #todo: @time to compare recursive version and normal version
 #    : test function
 #    : make code readable
+#    : order
+#    : not
+#    : what if pointers[i] exceeds n
 
 #recursive version
 #
@@ -9,30 +12,17 @@
 #output: m-elements 1d array, n-elements 1d array
 #
 function call_match(m, n, m_prefs, f_prefs)
-    males = 1:m
-    females = 1:n
+    m != length(m_prefs) || n != length(f_prefs) && error("the size of the ")####
+    m_pointers = ones(Int, m)
+    f_pointers = zeros(Int, n)
 
-    pointer_males = ones(Int, m)
-    temp_matched_males = zeros(Int, n)
+    m_matched = falses(m)
+    m_offers = zeros(Int, m)
 
-    println("called:1")
-    da_match(m, n, m_prefs, f_prefs, pointer_males, temp_matched_males)
+    da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
 end
 
-function tuples2list(m, n, candidate_arrays)##########change algorithm to reduce memory cost
-    #println(candidate_tuples)
-    candidate_males = [Int[] for i in 1:n]
-    for candidate_array in candidate_arrays
-    if candidate_array[2] != 0
-        #println(tuple)
-        push!(candidate_males[candidate_array[2]], candidate_array[1])
-    end
-    end
-    println(candidate_males)########needs to be fixed
-    return hcat(candidate_males...)
-end
-
-function proceed_pointer!(pointer_males)
+function proceed_pointer(pointer_males)
     return pointer_males .+ 1
 end
 
@@ -40,15 +30,22 @@ function male_pref(n, m_prefs, pointer_males, i)
     return pointer_males[i] > n ? 0 : m_prefs[i, pointer_males[i]]
 end
 
-function da_match(m, n, m_prefs, f_prefs, pointer_males, temp_matched_males)#m offers to f
-    candidate_tuples = [[i, male_pref(n, m_prefs, pointer_males, i)] for i in 1:m]
-    pointer_males = proceed_pointer!(pointer_males)
-    #println(candidate_tuples)
-    println("called:3")
+function create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
+    for i in 1:m
+        if m_matched[i]
+            m_offers[i] = 0
+        else
+            m_offers[i] = m_prefs[i, m_pointers[i]]
+        end
+    end
+end
 
-    candidate_males = tuples2list(m, n, candidate_tuples)
-    println("called:4")
-    println(candidate_males)
+function decide_to_accept(f_pointers, m_offers)
+
+function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)#m offers to f
+    m_pointers = proceed_pointer!(m_pointers)
+    create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
+
     new_temp_matched_males = choose_best_male(n, f_prefs, candidate_males, temp_matched_males)
 
     println("called:2")
