@@ -1,29 +1,41 @@
-#DA algorythm
+#DA algorithm
 #todo: @time to compare recursive version and normal version
 #    : test function
 #    : make code readable
 #    : order
 #    : not
-#    : what if pointers[i] exceeds n
+#    : what if m_pointers[i] exceeds n
+#    : change arrange_m_offers into ~
 
 #recursive version
 #
 #input: m, n, 1d array of m_prefs, 1d array of f_prefs
 #output: m-elements 1d array, n-elements 1d array
 #
-function call_match(m, n, m_prefs, f_prefs)
-    m != length(m_prefs) || n != length(f_prefs) && error("the size of the ")####
+
+function call_match(m::Int, n::Int, m_prefs, f_prefs)
+    #m != length(m_prefs) || n != length(f_prefs) && error("the size of the ")####
     m_pointers = ones(Int, m)
     f_pointers = zeros(Int, n)
 
     m_matched = falses(m)
     m_offers = zeros(Int, m)
 
-    da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
+    f_pointers = da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
+    return convert_pointer_to_list(f_pointers, f_prefs)#########
 end
 
-function proceed_pointer(pointer_males)
-    return pointer_males .+ 1
+function convert_pointer_to_list(f_pointers, f_prefs)
+    return f_prefs[f_pointers]
+end
+
+
+function proceed_pointer!(m, m_pointers, m_matched)
+    for i in 1:m
+        if !m_matched[i]
+            m_pointers[i] += 1
+        end
+    end
 end
 
 function male_pref(n, m_prefs, pointer_males, i)
@@ -35,39 +47,55 @@ function create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
         if m_matched[i]
             m_offers[i] = 0
         else
-            m_offers[i] = m_prefs[i, m_pointers[i]]
+            m_offers[i] = m_prefs[m_pointers[i], i]
         end
     end
 end
 
-function decide_to_accept(f_pointers, m_offers)
+function arrange_offers(m, n, m_offers)
+    arranged_offers = [Int[] for i in 1:m]
+    for j in 1:n
+        arranged_offers[j] = findin(m_offers, j)#findin returns indexes in one dimensional array
+    end
+    return arranged_offers
+end
+
+function most_desirable_male(f_pref, arranged_offer)
+    if isempty(arranged_offer)
+        return 0
+    else
+        return maximum(arranged_offer)
+    end
+end
+
+function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
+    arranged_offers = arrange_offers(m, n, m_offers)
+    for j in 1:n
+        for i in arranged_offers
+            argmax_in_offering_males = most_desirable_male(f_prefs[j], arranged_offers[j])
+            if f_pointers[j] < argmax_in_offering_males
+                m_matched[argmax_in_offering_males] = true
+                f_pointers[j] = argmax_in_offering_males
+            end
+             #findfirst returns zero if it couldn't find the 2nd argument in the 1st argument.#could be an error
+        end
+    end
+end
 
 function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)#m offers to f
-    m_pointers = proceed_pointer!(m_pointers)
+    proceed_pointer!(m, m_pointers, m_matched)
+    println("called:0")
     create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
+    println("called:1")
 
-    new_temp_matched_males = choose_best_male(n, f_prefs, candidate_males, temp_matched_males)
-
+    decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
     println("called:2")
-    if new_temp_matched_males == temp_matched_males
-        return temp_matched_males
+
+    if all(m_matched) == true
+        return f_pointers
     else
-        da_match(m, n, m_prefs, f_prefs, pointer_males, new_temp_matched_males)
+        da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
     end
 end
 
-function choose_best_male(n, f_prefs, candidate_males, temp_matched_males)##########
-    new_temp_matched_males = copy(temp_matched_males)
-    for j in 1:n
-    for i in f_prefs[j]
-        if i in candidate_males[:, j] &&  findfirst(f_prefs[j], temp_matched_males[j]) > i
-            new_temp_matched_males[j] = i
-            break
-        end
-    end
-    new_temp_matched_males[j] = 0
-    end
-    return new_temp_matched_males
-end
-
-call_match(2, 2, Int[1 2; 1 2], Int[1 2; 2 1])
+println(call_match(2, 2, Int[1 2; 2 1], Int[1 2; 2 1]))
