@@ -5,11 +5,35 @@
 #
 
 module DA
-    export call_match, check_data, generate_random_preference_data
+    export call_match, check_data, generate_random_preference_data, check_results
+
+function test(m, n)
+    m_prefs, f_prefs = generate_random_preference_data(m, n)
+    check_data(m, n, m_prefs, f_prefs)
+    call_match(m, n, m_prefs, f_prefs)
+end
+
+function check_results(m_f, f_m)
+    for (i, f) in enumerate(m_f)
+        if f != 0
+            f_m[f] != i && error("Matching Incomplete")
+        elseif f == 0
+            in(i, f_m) && error("Matching Incomplete")
+        end
+    end
+    return true
+end
 
 function generate_random_preference_data(m, n)
     m_prefs = Array(Int, n+1, m)
     f_prefs = Array(Int, m+1, n)
+    for i in 1:m
+        m_prefs[:, i] = shuffle(collect(0:n))
+    end
+    for j in 1:n
+        f_prefs[:, j] = shuffle(collect(0:m))
+    end
+    return m_prefs, f_prefs
 end
 
 function call_match(m::Int, n::Int, m_prefs, f_prefs)
@@ -28,8 +52,9 @@ end
 function check_data(m::Int, n::Int, m_prefs, f_prefs)
     size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
     size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
-    all([set(m_pref) for m_pref in m_prefs] .== set(0:n)) && error("there must be no same preference about f")
-    all([set(f_pref) for f_pref in f_prefs] .== set(0:m)) && error("there must be no same preference about m")
+    all([Set(m_pref) for m_pref in m_prefs] .== Set(0:n)) && error("there must be no same preference about f")
+    all([Set(f_pref) for f_pref in f_prefs] .== Set(0:m)) && error("there must be no same preference about m")
+    return true
 end
 
 function convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
@@ -40,7 +65,9 @@ end
 
 function proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
     for i in 1:m
-        if m_prefs[m_pointers[i] + 1, i] == 0
+        if m_pointers[i] + 1 > n + 1
+            m_matched[i] = true
+        elseif m_prefs[m_pointers[i] + 1, i] == 0
             m_matched[i] = true
             m_pointers[i] += 1
         elseif !m_matched[i]
@@ -97,8 +124,5 @@ function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_o
         da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
     end
 end
-
-println(call_match(3, 3, Int[1 0 1; 2 1 3; 3 3 2; 0 2 0], Int[1 2 0; 2 1 2; 3 3 3; 0 0 1]))
-println(call_match(3, 3, Int[1 2 3; 2 1 3; 2 3 1; 0 0 0], Int[1 2 3; 2 1 3; 1 2 3; 0 0 0]))
 
 end
