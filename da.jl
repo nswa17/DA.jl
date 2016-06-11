@@ -8,6 +8,9 @@
 #recursive version
 #
 
+module DA
+    export call_match
+
 function call_match(m::Int, n::Int, m_prefs, f_prefs)
     #m != length(m_prefs) || n != length(f_prefs) && error("the size of the ")####
     m_pointers = zeros(Int, m)
@@ -19,6 +22,13 @@ function call_match(m::Int, n::Int, m_prefs, f_prefs)
 
     f_pointers = da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
     return convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)#########
+end
+
+function check_data(m, n, m_prefs, f_prefs)
+    size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
+    size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
+    all([set(m_pref) for m_pref in m_prefs] .== set(0:n)) && error("there must be no same preference about f")
+    all([set(f_pref) for f_pref in f_prefs] .== set(0:m)) && error("there must be no same preference about m")
 end
 
 function convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
@@ -89,3 +99,5 @@ end
 
 println(call_match(3, 3, Int[1 0 1; 2 1 3; 3 3 2; 0 2 0], Int[1 2 0; 2 1 2; 3 3 3; 0 0 1]))
 println(call_match(3, 3, Int[1 2 3; 2 1 3; 2 3 1; 0 0 0], Int[1 2 3; 2 1 3; 1 2 3; 0 0 0]))
+
+end
