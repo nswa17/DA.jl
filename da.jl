@@ -6,6 +6,8 @@
 #    : not
 #    : what if m_pointers[i] exceeds n
 #    : change arrange_m_offers into ~
+#    : error
+#    : bug if call_match(3, 3, Int[1 2 3; 2 1 3; 2 3 1], Int[1 2 3; 2 1 3; 1 2 3])
 
 #recursive version
 #
@@ -22,13 +24,14 @@ function call_match(m::Int, n::Int, m_prefs, f_prefs)
     m_offers = zeros(Int, m)
 
     f_pointers = da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
-    return convert_pointer_to_list(f_pointers, f_prefs)#########
+    return convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)#########
 end
 
-function convert_pointer_to_list(f_pointers, f_prefs)
-    return f_prefs[f_pointers]
+function convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
+    f_m = f_prefs[f_pointers]
+    m_f = [findfirst(f_m, i) for i in 1:m]
+    return m_f, f_m
 end
-
 
 function proceed_pointer!(m, m_pointers, m_matched)
     for i in 1:m
@@ -36,10 +39,6 @@ function proceed_pointer!(m, m_pointers, m_matched)
             m_pointers[i] += 1
         end
     end
-end
-
-function male_pref(n, m_prefs, pointer_males, i)
-    return pointer_males[i] > n ? 0 : m_prefs[i, pointer_males[i]]
 end
 
 function create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
@@ -60,7 +59,7 @@ function arrange_offers(m, n, m_offers)
     return arranged_offers
 end
 
-function most_desirable_male(f_pref, arranged_offer)
+function best_male(f_pref, arranged_offer)
     if isempty(arranged_offer)
         return 0
     else
@@ -72,7 +71,7 @@ function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
     arranged_offers = arrange_offers(m, n, m_offers)
     for j in 1:n
         for i in arranged_offers
-            argmax_in_offering_males = most_desirable_male(f_prefs[j], arranged_offers[j])
+            argmax_in_offering_males = best_male(f_prefs[j], arranged_offers[j])
             if f_pointers[j] < argmax_in_offering_males
                 m_matched[argmax_in_offering_males] = true
                 f_pointers[j] = argmax_in_offering_males
@@ -98,4 +97,4 @@ function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_o
     end
 end
 
-println(call_match(2, 2, Int[1 2; 2 1], Int[1 2; 2 1]))
+println(call_match(3, 3, Int[1 2 3; 2 1 3; 2 3 1], Int[1 2 3; 2 1 3; 1 2 3]))
