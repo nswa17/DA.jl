@@ -85,35 +85,20 @@ end
 
 function create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
     for i in 1:m
-        if m_matched[i]
-            m_offers[i] = 0
-        else
-            m_offers[i] = m_prefs[m_pointers[i], i]
-        end
+        m_offers[i] = m_matched[i] ? 0 : m_prefs[m_pointers[i], i]
     end
 end
 
-function get_best_male_pointers(m, n, m_offers, f_prefs)
-    best_male_pointers = zeros(Int, n)
+function decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched)
     for (i, m_offer) in enumerate(m_offers)
         m_offer == 0 && continue
         male_i_pointer = findfirst(f_prefs[:, m_offer], i)
-        if best_male_pointers[m_offer] > male_i_pointer || best_male_pointers[m_offer] == 0
-            best_male_pointers[m_offer] = male_i_pointer
-        end
-    end
-    return best_male_pointers
-end
-
-function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
-    best_male_pointers = get_best_male_pointers(m, n, m_offers, f_prefs)
-    for j in 1:n
-        if f_pointers[j] > best_male_pointers[j] && best_male_pointers[j] != 0
-            m_matched[f_prefs[best_male_pointers[j], j]] = true
-            if f_prefs[f_pointers[j], j] != 0
-                m_matched[f_prefs[f_pointers[j], j]] = false##########error is here?
+        if f_pointers[m_offer] > male_i_pointer
+            if f_prefs[f_pointers[m_offer], m_offer] != 0
+                m_matched[f_prefs[f_pointers[m_offer], m_offer]] = false
             end
-            f_pointers[j] = best_male_pointers[j]#findfirst returns zero if it couldn't find the 2nd argument in the 1st argument.
+            f_pointers[m_offer] = male_i_pointer
+            m_matched[i] = true
         end
     end
 end
@@ -121,7 +106,7 @@ end
 function recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
     proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
     create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
-    decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
+    decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched)
     if all(m_matched) == true
         return f_pointers
     else
@@ -132,15 +117,8 @@ end
 function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
     while !(all(m_matched) == true)
         proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
-        println("m_pointers")
-        println(m_pointers)
-        println("f_pointers")
-        println(f_pointers)
-        println("matched")
-        println(m_matched)
         create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
-        decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
-        println()
+        decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched)
     end
     return f_pointers
 end
