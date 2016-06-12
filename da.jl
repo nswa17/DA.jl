@@ -5,8 +5,9 @@
 #
 
 module DA
-    export call_match, check_data, generate_random_preference_data, check_results, test
+    export call_match, check_data, generate_random_preference_data, check_results
 
+#####functions for debug#####
 function test(m, n)
     m_prefs, f_prefs = generate_random_preference_data(m, n)
     check_data(m, n, m_prefs, f_prefs)
@@ -44,6 +45,16 @@ function generate_random_preference_data(m, n)
     return m_prefs, f_prefs
 end
 
+function check_data(m::Int, n::Int, m_prefs, f_prefs)
+    size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
+    size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
+    all([Set(m_pref) for m_pref in m_prefs] .== Set(0:n)) && error("the preference about f must be different")
+    all([Set(f_pref) for f_pref in f_prefs] .== Set(0:m)) && error("the preference about m must be different")
+    return true
+end
+
+#####main functions#####
+
 function call_match(m::Int, n::Int, m_prefs, f_prefs, rec=false)
     m_pointers = zeros(Int, m)
     f_pointers = Array(Int, n)
@@ -55,14 +66,6 @@ function call_match(m::Int, n::Int, m_prefs, f_prefs, rec=false)
 
     f_pointers = rec ? recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers) : da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)
     return convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
-end
-
-function check_data(m::Int, n::Int, m_prefs, f_prefs)
-    size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
-    size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
-    all([Set(m_pref) for m_pref in m_prefs] .== Set(0:n)) && error("there must be no same preference about f")
-    all([Set(f_pref) for f_pref in f_prefs] .== Set(0:m)) && error("there must be no same preference about m")
-    return true
 end
 
 function convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
@@ -105,7 +108,6 @@ function get_best_male_pointers!(m, n, m_offers, f_prefs, best_m_pointers)
     end
 end
 
-
 function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched, best_male_pointers)
     get_best_male_pointers!(m, n, m_offers, f_prefs, best_male_pointers)
     for j in 1:n
@@ -121,11 +123,8 @@ end
 
 function recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)
     proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
-    #println("called:0")
     create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
-    #println("called:1")
     decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched, best_male_pointers)
-    #println("called:2")
     if all(m_matched) == true
         return f_pointers
     else
@@ -136,11 +135,8 @@ end
 function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers, best_male_pointers)
     while any(m_matched) == false
         proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
-        #println("called:0")
         create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
-        #println("called:1")
         decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched, best_male_pointers)
-        #println("called:2")
     end
     return f_pointers
 end
