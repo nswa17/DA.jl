@@ -9,14 +9,10 @@ julia code for DA Algorithm
 
 ### DA.call_match
 
-: ```(m, n, m_prefs, f_prefs[, rec, m_first]) ->
+: ```(m_prefs, f_prefs[, rec, m_first]) ->
  matched_males_list, matched_females_list```
 
 : call DA algorithm with given argument
-
-```m``` -- number of males
-
-```n``` -- number of females
 
 ```m_prefs``` -- 2 dimensional array of size ```(n + 1) * m```
 
@@ -28,7 +24,7 @@ julia code for DA Algorithm
 
 ### DA.check_data
 
-: ```(m, n, m_prefs, f_prefs) -> throw an error if any```
+: ```(m_prefs, f_prefs) -> throw an error if any```
 
 : checks given argument to safely conduct matching
 
@@ -37,6 +33,11 @@ julia code for DA Algorithm
 : ```(m, n) -> (m_prefs, f_prefs)```
 
 : generates preference data
+
+```m``` -- number of males
+
+```n``` -- number of females
+
 
 ### DA.check_results(m_matched, f_matched)
 

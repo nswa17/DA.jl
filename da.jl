@@ -1,9 +1,13 @@
 #DA Algorithm
 
 module DA
-    export call_match, check_data, generate_random_preference_data, check_results
+    export call_match, check_data, generate_random_preference_data, check_results, stable_matching
 
-function call_match(m::Int, n::Int, m_prefs, f_prefs, rec=false, m_first=true)
+function call_match(m_prefs, f_prefs, rec=false, m_first=true)
+    m::Int
+    n::Int
+    m = size(m_prefs, 2)
+    n = size(f_prefs, 2)
     if !m_first
         m, n = n, m
         m_prefs, f_prefs = f_prefs, m_prefs
@@ -80,6 +84,26 @@ end
 
 #####functions for debug#####
 
+function stable_matching(m_matched, f_matched, m_prefs, f_prefs)
+    for (i, j) in enumerate(m_matched)
+        j == 0 && continue
+        index_of_j = findfirst(m_prefs[:, i], j)
+        if index_of_j > 1
+            for k in 1:(index_of_j-1)
+                better_j = m_prefs[k, i]
+                better_j == 0 && continue
+                index_of_i = findfirst(f_prefs[:, better_j], f_matched[better_j])
+                if index_of_i > 1
+                    if in(i, f_prefs[:, better_j][1:(index_of_i-1)])
+                        return false
+                    end
+                end
+            end
+        end
+    end
+    return true
+end
+
 function test(m, n)
     m_prefs, f_prefs = generate_random_preference_data(m, n)
     check_data(m, n, m_prefs, f_prefs)
@@ -117,7 +141,9 @@ function generate_random_preference_data(m, n)
     return m_prefs, f_prefs
 end
 
-function check_data(m::Int, n::Int, m_prefs, f_prefs)
+function check_data(m_prefs, f_prefs)
+    m = size(m_prefs, 2)
+    n = size(f_prefs, 2)
     size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
     size(f_prefs) != (m+1, n) && error("the size of f_prefs must be (m+1, n)")
     all([Set(m_prefs[:, i]) == Set(0:n) for i in 1:size(m_prefs, 2)]) || error("error in m_prefs")
