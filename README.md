@@ -24,10 +24,10 @@ include("da.jl")
 m, n = 100, 100
 m_prefs, f_prefs = DA.generate_random_preference_data(m, n)
 
-DA.check_data(m, n, m_prefs, f_prefs)
+DA.check_data(m, n, m_prefs, f_prefs) # check data before conducting matching
 
-m_f, f_m = call_match(m, n, m_prefs, f_prefs)
+m_f, f_m = call_match(m, n, m_prefs, f_prefs) # match
 
-DA.check_results(m_f, f_m)
+DA.check_results(m_f, f_m)  # check whether results fit
 
 ```
