@@ -48,8 +48,8 @@ end
 function check_data(m::Int, n::Int, m_prefs, f_prefs)
     size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
     size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
-    all([Set(m_pref) for m_pref in m_prefs] .== Set(0:n)) && error("the preference about f must be different")
-    all([Set(f_pref) for f_pref in f_prefs] .== Set(0:m)) && error("the preference about m must be different")
+    all([Set(m_pref) for m_pref in m_prefs] .== Set(0:n)) && error("error in m_prefs")
+    all([Set(f_pref) for f_pref in f_prefs] .== Set(0:m)) && error("error in f_prefs")
     return true
 end
 
