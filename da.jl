@@ -44,8 +44,8 @@ end
 function check_data(m::Int, n::Int, m_prefs, f_prefs)
     size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
     size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
-    all([Set(m_pref) for m_pref in m_prefs] .== Set(0:n)) && error("error in m_prefs")
-    all([Set(f_pref) for f_pref in f_prefs] .== Set(0:m)) && error("error in f_prefs")
+    all([Set(m_prefs[:, i]) == Set(0:n) for i in 1:size(m_prefs, 2)]) || error("error in m_prefs")
+    all([Set(f_prefs[:, j]) == Set(0:m) for j in 1:size(f_prefs, 2)]) || error("error in f_prefs")
     return true
 end
 
@@ -64,8 +64,9 @@ function call_match(m::Int, n::Int, m_prefs, f_prefs, rec=false)
 end
 
 function convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
+    #println(f_pointers)
     f_m = [f_prefs[f_pointer, j] for (j, f_pointer) in enumerate(f_pointers)]
-    m_f = [findfirst(f_m, i) for i in 1:m]
+    m_f = [findfirst(f_m, i) for i in 1:m]###########error
     return m_f, f_m
 end
 
@@ -95,13 +96,10 @@ end
 function get_best_male_pointers(m, n, m_offers, f_prefs)
     best_male_pointers = zeros(Int, n)
     for (i, m_offer) in enumerate(m_offers)
-        if m_offer == 0
-            continue
-        end
-        if best_male_pointers[m_offer] != 0 && best_male_pointers[m_offer] > findfirst(f_prefs[:, m_offer], i)
-            best_male_pointers[m_offer] = i
-        elseif best_male_pointers[m_offer] == 0
-            best_male_pointers[m_offer] = i
+        m_offer == 0 && continue
+        male_i_pointer = findfirst(f_prefs[:, m_offer], i)
+        if best_male_pointers[m_offer] > male_i_pointer || best_male_pointers[m_offer] == 0
+            best_male_pointers[m_offer] = male_i_pointer
         end
     end
     return best_male_pointers
@@ -113,7 +111,7 @@ function decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
         if f_pointers[j] > best_male_pointers[j] && best_male_pointers[j] != 0
             m_matched[f_prefs[best_male_pointers[j], j]] = true
             if f_prefs[f_pointers[j], j] != 0
-                m_matched[f_prefs[f_pointers[j], j]] = false
+                m_matched[f_prefs[f_pointers[j], j]] = false##########error is here?
             end
             f_pointers[j] = best_male_pointers[j]#findfirst returns zero if it couldn't find the 2nd argument in the 1st argument.
         end
@@ -132,10 +130,17 @@ function recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_ma
 end
 
 function da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched, m_offers)
-    while any(m_matched) == false
+    while !(all(m_matched) == true)
         proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
+        println("m_pointers")
+        println(m_pointers)
+        println("f_pointers")
+        println(f_pointers)
+        println("matched")
+        println(m_matched)
         create_offers!(m, m_prefs, m_matched, m_pointers, m_offers)
         decide_to_accept!(m, n, f_pointers, f_prefs, m_offers, m_matched)
+        println()
     end
     return f_pointers
 end
