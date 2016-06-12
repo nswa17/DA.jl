@@ -20,9 +20,9 @@ function call_match(m::Int, n::Int, m_prefs, f_prefs, rec=false, m_first=true)
 end
 
 function convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs)
-    f_m = [f_prefs[f_pointer, j] for (j, f_pointer) in enumerate(f_pointers)]
-    m_f = [findfirst(f_m, i) for i in 1:m]
-    return m_f, f_m
+    f_matched = [f_prefs[f_pointer, j] for (j, f_pointer) in enumerate(f_pointers)]
+    m_matched = [findfirst(f_matched, i) for i in 1:m]
+    return m_matched, f_matched
 end
 
 function proceed_pointer!(m, n, m_pointers, m_matched, m_prefs)
@@ -83,23 +83,23 @@ end
 function test(m, n)
     m_prefs, f_prefs = generate_random_preference_data(m, n)
     check_data(m, n, m_prefs, f_prefs)
-    m_f, f_m = call_match(m, n, m_prefs, f_prefs)
-    check_results(m_f, f_m)
+    m_matched, f_matched = call_match(m, n, m_prefs, f_prefs)
+    check_results(m_matched, f_matched)
 end
 
-function check_results(m_f, f_m)
-    for (i, f) in enumerate(m_f)
+function check_results(m_matched, f_matched)
+    for (i, f) in enumerate(m_matched)
         if f != 0
-            f_m[f] != i && error("Matching Incomplete with male $i, m_f[$i] = $(m_f[i]) though f_m[$f] = $(f_m[f])")
+            f_matched[f] != i && error("Matching Incomplete with male $i, m_matched[$i] = $(m_matched[i]) though f_matched[$f] = $(f_matched[f])")
         elseif f == 0
-            in(i, f_m) && error("Matching Incomplete with male $i, m_f[$i] = $(m_f[i]) though f_m[$f] = $(f_m[f])")
+            in(i, f_matched) && error("Matching Incomplete with male $i, m_matched[$i] = $(m_matched[i]) though f_matched[$f] = $(f_matched[f])")
         end
     end
-    for (j, m) in enumerate(f_m)
+    for (j, m) in enumerate(f_matched)
         if m != 0
-            m_f[m] != j && error("Matching Incomplete with female $j, f_m[$j] = $(f_m[j]) though m_f[$m] = $(m_f[m])")
+            m_matched[m] != j && error("Matching Incomplete with female $j, f_matched[$j] = $(f_matched[j]) though m_matched[$m] = $(m_matched[m])")
         elseif m == 0
-            in(j, m_f) && error("Matching Incomplete with female $j, f_m[$j] = $(f_m[j]) though m_f[$m] = $(m_f[m])")
+            in(j, m_matched) && error("Matching Incomplete with female $j, f_matched[$j] = $(f_matched[j]) though m_matched[$m] = $(m_matched[m])")
         end
     end
     return true
@@ -119,7 +119,7 @@ end
 
 function check_data(m::Int, n::Int, m_prefs, f_prefs)
     size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
-    size(f_prefs) != (n+1, m) && error("the size of f_prefs must be (m+1, n)")
+    size(f_prefs) != (m+1, n) && error("the size of f_prefs must be (m+1, n)")
     all([Set(m_prefs[:, i]) == Set(0:n) for i in 1:size(m_prefs, 2)]) || error("error in m_prefs")
     all([Set(f_prefs[:, j]) == Set(0:m) for j in 1:size(f_prefs, 2)]) || error("error in f_prefs")
     return true

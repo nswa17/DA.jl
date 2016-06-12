@@ -4,37 +4,45 @@ julia code for DA Algorithm
 ## Usage
 
 ### DA
-    : module
+
+: module
 
 ### DA.call_match
 
-    : ```(m, n, m_prefs, f_prefs[, rec, m_first]) ->
-     matched_males_list, matched_females_list```
-    : call DA algorithm with given argument
+: ```(m, n, m_prefs, f_prefs[, rec, m_first]) ->
+ matched_males_list, matched_females_list```
 
-    m -- number of males
+: call DA algorithm with given argument
 
-    n -- number of females
+```m``` -- number of males
 
-    m_prefs -- 2 dimensional array of size ```(n + 1) * m```
+```n``` -- number of females
 
-    f_prefs -- 2 dimensional array of size ```(m + 1) * n```
+```m_prefs``` -- 2 dimensional array of size ```(n + 1) * m```
 
-    rec -- false by defalt, an optional argument to call recursive DA algorithm
+```f_prefs``` -- 2 dimensional array of size ```(m + 1) * n```
 
-    m_first -- true by default, an optional argument to decide which gender offers to the other
+```rec``` -- false by defalt, an optional argument to call recursive DA algorithm
+
+```m_first``` -- true by default, an optional argument to decide which gender offers to the other
 
 ### DA.check_data
-    : ```(m, n, m_prefs, f_prefs) -> throw an error if any```
-    : checks given argument to safely conduct matching
+
+: ```(m, n, m_prefs, f_prefs) -> throw an error if any```
+
+: checks given argument to safely conduct matching
 
 ### DA.generate_random_preference_data
-    : ```(m, n) -> (m_prefs, f_prefs)```
-    : generates preference data
 
-### DA.check_results(m_f, f_m)
-    : ```(m_f, f_m) -> throw an error if any```
-    : checks results of matching
+: ```(m, n) -> (m_prefs, f_prefs)```
+
+: generates preference data
+
+### DA.check_results(m_matched, f_matched)
+
+: ```(m_matched, f_matched) -> throw an error if any```
+
+: checks results of matching
 
 ## Example
 
@@ -47,8 +55,8 @@ m_prefs, f_prefs = DA.generate_random_preference_data(m, n)
 
 DA.check_data(m, n, m_prefs, f_prefs) # checks data before conducting matching
 
-m_f, f_m = call_match(m, n, m_prefs, f_prefs) # matches males and females
+m_matched, f_matched = call_match(m, n, m_prefs, f_prefs) # matches males and females
 
-DA.check_results(m_f, f_m)  # checks whether results fit
+DA.check_results(m_matched, f_matched)  # checks whether results fit
 
 ```
