@@ -22,6 +22,19 @@ julia code for DA Algorithm
 
 ```m_first``` -- true by default, an optional argument to decide which gender offers to the other
 
+### DA.call_simple_match
+
+: ```(m_prefs, f_prefs[, m_first]) ->
+ matched_males_list, matched_females_list```
+
+: call simple version of DA algorithm with given argument
+
+```m_prefs``` -- 2 dimensional array of size ```(n + 1) * m```
+
+```f_prefs``` -- 2 dimensional array of size ```(m + 1) * n```
+
+```m_first``` -- true by default, an optional argument to decide which gender offers to the other
+
 ### DA.check_data
 
 : ```(m_prefs, f_prefs) -> throw an error if any```
