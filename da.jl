@@ -94,6 +94,7 @@ function call_simple_match(m_prefs, f_prefs, m_first = true)
     m_pointers = zeros(Int, m)
     m_matched_tf = falses(m)
     f_matched = zeros(Int, n)
+    j::Int = 0
     while !(all(m_matched_tf) == true)
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
         for i in 1:m
@@ -177,8 +178,8 @@ function check_data(m_prefs, f_prefs)
     n = size(f_prefs, 2)
     size(m_prefs) != (n+1, m) && error("the size of m_prefs must be (n+1, m)")
     size(f_prefs) != (m+1, n) && error("the size of f_prefs must be (m+1, n)")
-    all([Set(m_prefs[:, i]) == Set(0:n) for i in 1:size(m_prefs, 2)]) || error("error in m_prefs")
-    all([Set(f_prefs[:, j]) == Set(0:m) for j in 1:size(f_prefs, 2)]) || error("error in f_prefs")
+    all([Set(m_prefs[:, i]) == Set(0:n) for i in 1:m]) || error("error in m_prefs")
+    all([Set(f_prefs[:, j]) == Set(0:m) for j in 1:n]) || error("error in f_prefs")
     return true
 end
 
