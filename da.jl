@@ -87,7 +87,7 @@ function decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf)
                 m_matched_tf[f_prefs[f_pointers[m_offers[2, k]], m_offers[2, k]]] = false
             end
             f_pointers[m_offers[2, k]] = f_ranks[m_offers[1, k], m_offers[2, k]]
-            m_matched_tf[m_offers[1, k]] = true
+            m_matched_tf[m_offers[1, k]] = true###osoi
         end
     end
 end
@@ -95,11 +95,11 @@ end
 function recursive_da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
     proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
     create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
-    decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched_tf)
+    decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf)
     if m_offers[1, 1] == 0
         return f_pointers
     else
-        recursive_da_match(m::Int, n::Int, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
+        recursive_da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
     end
 end
 
