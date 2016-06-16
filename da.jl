@@ -56,11 +56,13 @@ end
 
 function proceed_pointer!(m::Int, n::Int, m_pointers, m_matched_tf, m_prefs)
     for i in 1:m
-        if !m_matched_tf[i]
+        if m_pointers[i] + 1 > n + 1
+            m_matched_tf[i] = true
+        elseif m_prefs[m_pointers[i] + 1, i] == 0
+            m_matched_tf[i] = true
             m_pointers[i] += 1
-            if m_pointers[i] + 1 > n + 1 || m_prefs[m_pointers[i] + 1, i] == 0
-                m_matched_tf[i] = true
-            end
+        elseif !m_matched_tf[i]
+            m_pointers[i] += 1
         end
     end
 end
