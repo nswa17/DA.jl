@@ -29,6 +29,7 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
 
     m_matched_tf = falses(m)
     m_offers = zeros(T, 2, m+1)
+    m_offers[1, 1] = 1
 
     f_pointers = rec ? recursive_da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers) : da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
     return m_first ? convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs) : reverse(convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs))
@@ -95,7 +96,7 @@ function recursive_da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointer
     proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
     create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
     decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched_tf)
-    if all(m_matched_tf) == true
+    if m_offers[1, 1] == 0
         return f_pointers
     else
         recursive_da_match(m::Int, n::Int, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
@@ -103,7 +104,7 @@ function recursive_da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointer
 end
 
 function da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
-    while !(all(m_matched_tf) == true)
+    while m_offers[1, 1] != 0
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
         create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
         decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf)
@@ -156,7 +157,7 @@ function call_simple_match(m_prefs, f_prefs, m_first = true)
             end
         end
     end
-    return m_first ? ([findfirst(f_matched, i) for i in 1:m], f_matched) : (f_matched, [findfirst(f_matched, i) for i in 1:m])
+    return m_first ? (Int[findfirst(f_matched, i) for i in 1:m], f_matched) : (f_matched, [findfirst(f_matched, i) for i in 1:m])
 end
 
 #####functions for debug#####
@@ -179,13 +180,6 @@ function stable_matching(m_matched, f_matched, m_prefs, f_prefs)
         end
     end
     return true
-end
-
-function test(m, n)
-    m_prefs, f_prefs = generate_random_preference_data(m, n)
-    check_data(m, n, m_prefs, f_prefs)
-    m_matched, f_matched = call_match(m_prefs, f_prefs)
-    check_results(m_matched, f_matched)
 end
 
 function check_results(m_matched, f_matched)
