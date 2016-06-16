@@ -22,6 +22,7 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
         m, n = n, m
         m_prefs, f_prefs = f_prefs, m_prefs
     end
+    f_ranks = get_ranks(f_prefs)
     m_pointers = zeros(T, m)
     f_pointers = Array(T, n)
     f_pointers = [findfirst(f_prefs[:, j], 0) for j in 1:n]
@@ -29,8 +30,22 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
     m_matched_tf = falses(m)
     m_offers = zeros(T, m)
 
-    f_pointers = rec ? recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers) : da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
+    f_pointers = rec ? recursive_da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers) : da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
     return m_first ? convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs) : reverse(convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs))
+end
+
+function get_ranks(prefs)
+    ranks = Array(eltype(prefs), size(prefs))
+    for j in 1:size(prefs, 2)
+        for (r, i) in enumerate(prefs[:, j])
+            if i != 0
+                ranks[i, j] = r
+            else
+                ranks[end, j] = r
+            end
+        end
+    end
+    return ranks
 end
 
 function convert_pointer_to_list(m::Int, m_pointers, f_pointers, f_prefs)
@@ -58,21 +73,20 @@ function create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
     end
 end
 
-function decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched_tf)
+function decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf)
     for (i, m_offer) in enumerate(m_offers)
         m_offer == 0 && continue
-        male_i_pointer = findfirst(f_prefs[:, m_offer], i)
-        if f_pointers[m_offer] > male_i_pointer
+        if f_pointers[m_offer] > f_ranks[i, m_offer]
             if f_prefs[f_pointers[m_offer], m_offer] != 0
                 m_matched_tf[f_prefs[f_pointers[m_offer], m_offer]] = false
             end
-            f_pointers[m_offer] = male_i_pointer
+            f_pointers[m_offer] = f_ranks[i, m_offer]
             m_matched_tf[i] = true
         end
     end
 end
 
-function recursive_da_match(m::Int, n::Int, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
+function recursive_da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
     proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
     create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
     decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched_tf)
@@ -83,16 +97,26 @@ function recursive_da_match(m::Int, n::Int, m_prefs, f_prefs, m_pointers, f_poin
     end
 end
 
-function da_match(m::Int, n::Int, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
+function da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
     while !(all(m_matched_tf) == true)
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
         create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
-        decide_to_accept!(f_pointers, f_prefs, m_offers, m_matched_tf)
+        decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf)
     end
     return f_pointers
 end
 
 function call_simple_match(m_prefs, f_prefs, m_first = true)
+    max = maximum([maximum(m_prefs), maximum(f_prefs)])
+    T = if max < 2^8
+            UInt8
+        elseif max < 2^16
+            UInt16
+        elseif max < 2^32
+            UInt32
+        else
+            UInt64
+        end
     m::Int
     n::Int
     m = size(m_prefs, 2)
@@ -101,22 +125,28 @@ function call_simple_match(m_prefs, f_prefs, m_first = true)
         m, n = n, m
         m_prefs, f_prefs = f_prefs, m_prefs
     end
-    m_pointers = zeros(Int, m)
+    m_pointers = zeros(T, m)
     m_matched_tf = falses(m)
-    f_matched = zeros(Int, n)
-    j::Int = 0
+    f_matched = zeros(T, n)
+    f_ranks = get_ranks(f_prefs)
+    j::T = 0
     while !(all(m_matched_tf) == true)
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
         for i in 1:m
             if !m_matched_tf[i]
                 j = m_prefs[m_pointers[i], i]
-                j == 0 && continue
-                if findfirst(f_prefs[:, j], f_matched[j]) > findfirst(f_prefs[:, j], i)
-                    if f_matched[j] != 0
-                        m_matched_tf[f_matched[j]] = false
+                j == 0 && continue#####################
+                if f_matched[j] == 0
+                    if f_ranks[end, j] > f_ranks[i, j]
+                        f_matched[j] = i
+                        m_matched_tf[i] = true
                     end
-                    f_matched[j] = i
-                    m_matched_tf[i] = true
+                else
+                    if f_ranks[f_matched[j], j] > f_ranks[i, j]
+                        m_matched_tf[f_matched[j]] = false
+                        f_matched[j] = i
+                        m_matched_tf[i] = true
+                    end
                 end
             end
         end
