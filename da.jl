@@ -1,23 +1,33 @@
 #DA Algorithm
+#Type erabu to yoi?
+# threading
 
 module DA
     export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
 
 function call_match(m_prefs, f_prefs, rec=false, m_first=true)
-    m::Int
-    n::Int
-    m = size(m_prefs, 2)
-    n = size(f_prefs, 2)
+    max = maximum([maximum(m_prefs), maximum(f_prefs)])
+    T = if max < 2^8
+            UInt8
+        elseif max < 2^16
+            UInt16
+        elseif max < 2^32
+            UInt32
+        else
+            UInt64
+        end
+    m::Int = size(m_prefs, 2)
+    n::Int = size(f_prefs, 2)
     if !m_first
         m, n = n, m
         m_prefs, f_prefs = f_prefs, m_prefs
     end
-    m_pointers = zeros(Int, m)
-    f_pointers = Array(Int, n)
+    m_pointers = zeros(T, m)
+    f_pointers = Array(T, n)
     f_pointers = [findfirst(f_prefs[:, j], 0) for j in 1:n]
 
     m_matched_tf = falses(m)
-    m_offers = zeros(Int, m)
+    m_offers = zeros(T, m)
 
     f_pointers = rec ? recursive_da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers) : da_match(m, n, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
     return m_first ? convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs) : reverse(convert_pointer_to_list(m, m_pointers, f_pointers, f_prefs))

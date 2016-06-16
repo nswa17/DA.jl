@@ -51,13 +51,13 @@ julia code for DA Algorithm
 
 ```n``` -- number of females
 
-### DA.check_results(m_matched, f_matched)
+### DA.check_results
 
 : ```(m_matched, f_matched) -> throw an error if any```
 
 : checks results of matching
 
-### DA.stable_matching(m_matched, f_matched, m_prefs, f_prefs)
+### DA.stable_matching
 
 : ```(m_matched, f_matched, m_prefs, f_prefs) -> if matching is stable then true else false```
 
