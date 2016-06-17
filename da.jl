@@ -6,6 +6,7 @@ module DA
     export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
 
 function call_match(m_prefs, f_prefs, rec=false, m_first=true)
+    """
     max = maximum([maximum(m_prefs), maximum(f_prefs)])
     T = if max < 2^8
             UInt8
@@ -16,6 +17,8 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
         else
             UInt64
         end
+    """
+    T = Int
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
     if !m_first
@@ -25,7 +28,9 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
     f_ranks = get_ranks(f_prefs)
     m_pointers = zeros(T, m)
     f_pointers = Array(T, n)
-    f_pointers = [findfirst(f_prefs[:, j], 0) for j in 1:n]
+    for j in 1:n
+        f_pointers[j] = f_ranks[end, j]
+    end
 
     m_matched_tf = falses(m)
     m_offers = zeros(T, 2, m+1)
@@ -55,20 +60,6 @@ function convert_pointer_to_list(m::Int, m_pointers, f_pointers, f_prefs)
     return m_matched, f_matched
 end
 
-"""
-function proceed_pointer!(m::Int, n::Int, m_pointers, m_matched_tf, m_prefs)
-    for i in 1:m
-        if m_pointers[i] + 1 > n + 1
-            m_matched_tf[i] = true
-        elseif m_prefs[m_pointers[i] + 1, i] == 0
-            m_matched_tf[i] = true
-            m_pointers[i] += 1
-        elseif !m_matched_tf[i]
-            m_pointers[i] += 1
-        end
-    end
-end
-"""
 function proceed_pointer!(m::Int, n::Int, m_pointers, m_matched_tf, m_prefs)
     for i in 1:m
         if m_pointers[i] > n
