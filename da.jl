@@ -1,6 +1,5 @@
 #DA Algorithm
-#Type erabu to yoi?
-# threading
+#Todo: threading
 
 module DA
     export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
@@ -25,7 +24,7 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
         m, n = n, m
         m_prefs, f_prefs = f_prefs, m_prefs
     end
-    f_ranks = get_ranks(f_prefs)
+    f_ranks = get_ranks(f_prefs, m, n)
     m_pointers = zeros(T, m)
     f_matched = zeros(T, n)
 
@@ -37,14 +36,14 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
     return m_first ? convert_pointer_to_list(m, f_matched) : reverse(convert_pointer_to_list(m, f_matched))
 end
 
-function get_ranks(prefs)
-    ranks = Array(eltype(prefs), size(prefs))
-    for j in 1:size(prefs, 2)
-        for (r, i) in enumerate(prefs[:, j])
-            if i != 0
-                ranks[i, j] = r
+function get_ranks(prefs, m, n)
+    ranks = Array(eltype(prefs), (m+1, n))
+    for j in 1:n
+        for i in 1:(m+1)
+            if prefs[i, j] != 0
+                ranks[prefs[i, j], j] = prefs[i, j]
             else
-                ranks[end, j] = r
+                ranks[m+1, j] = prefs[i, j]
             end
         end
     end
@@ -138,7 +137,7 @@ function call_simple_match(m_prefs, f_prefs, m_first = true)
     m_pointers = zeros(T, m)
     m_matched_tf = falses(m)
     f_matched = zeros(T, n)
-    f_ranks = get_ranks(f_prefs)
+    f_ranks = get_ranks(f_prefs, m, n)
     j::T = 0
     while !(all(m_matched_tf) == true)
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
