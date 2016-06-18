@@ -24,7 +24,7 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
         m, n = n, m
         m_prefs, f_prefs = f_prefs, m_prefs
     end
-    f_ranks = get_ranks(f_prefs, m, n)
+    f_ranks = get_ranks(f_prefs)
     m_pointers = zeros(T, m)
     f_matched = zeros(T, n)
 
@@ -36,14 +36,14 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
     return m_first ? convert_pointer_to_list(m, f_matched) : reverse(convert_pointer_to_list(m, f_matched))
 end
 
-function get_ranks(prefs, m, n)
-    ranks = Array(eltype(prefs), (m+1, n))
-    for j in 1:n
-        for i in 1:(m+1)
-            if prefs[i, j] != 0
-                ranks[prefs[i, j], j] = prefs[i, j]
+@inbounds function get_ranks(prefs)
+    ranks = Array(eltype(prefs), size(prefs))
+    for j in 1:size(prefs, 2)
+        for (r, i) in enumerate(prefs[:, j])
+            if i != 0
+                ranks[i, j] = r
             else
-                ranks[m+1, j] = prefs[i, j]
+                ranks[end, j] = r
             end
         end
     end
@@ -55,7 +55,7 @@ function convert_pointer_to_list(m::Int, f_matched)
     return m_matched, f_matched
 end
 
-function proceed_pointer!(m::Int, n::Int, m_pointers, m_matched_tf, m_prefs)
+@inbounds function proceed_pointer!(m::Int, n::Int, m_pointers, m_matched_tf, m_prefs)
     for i in 1:m
         if m_pointers[i] > n
             m_matched_tf[i] = true
@@ -70,7 +70,7 @@ function proceed_pointer!(m::Int, n::Int, m_pointers, m_matched_tf, m_prefs)
     end
 end
 
-function create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
+@inbounds function create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
     c::Int = 1
     for i in 1:m
         if !m_matched_tf[i] && m_prefs[m_pointers[i], i] != 0
@@ -83,7 +83,7 @@ function create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
     m_offers[2, c] = 0
 end
 
-function decide_to_accept!(f_matched, f_ranks, f_prefs, m_offers, m_matched_tf)
+@inbounds function decide_to_accept!(f_matched, f_ranks, f_prefs, m_offers, m_matched_tf)
     for k in 1:length(m_offers)
         m_offers[1, k] == 0 && break
         if f_matched[m_offers[2, k]] == 0
@@ -137,7 +137,7 @@ function call_simple_match(m_prefs, f_prefs, m_first = true)
     m_pointers = zeros(T, m)
     m_matched_tf = falses(m)
     f_matched = zeros(T, n)
-    f_ranks = get_ranks(f_prefs, m, n)
+    f_ranks = get_ranks(f_prefs)
     j::T = 0
     while !(all(m_matched_tf) == true)
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
