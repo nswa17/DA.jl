@@ -4,20 +4,7 @@
 module DA
     export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
 
-function call_match(m_prefs, f_prefs, rec=false, m_first=true)
-    """
-    max = maximum([maximum(m_prefs), maximum(f_prefs)])
-    T = if max < 2^8
-            UInt8
-        elseif max < 2^16
-            UInt16
-        elseif max < 2^32
-            UInt32
-        else
-            UInt64
-        end
-    """
-    T = Int
+function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, rec=false, m_first=true)
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
     if !m_first
@@ -25,18 +12,18 @@ function call_match(m_prefs, f_prefs, rec=false, m_first=true)
         m_prefs, f_prefs = f_prefs, m_prefs
     end
     f_ranks = get_ranks(f_prefs)
-    m_pointers = zeros(T, m)
-    f_matched = zeros(T, n)
+    m_pointers = zeros(Int, m)
+    f_matched = zeros(Int, n)
 
     m_matched_tf = falses(m)
-    m_offers = zeros(T, 2, m+1)
+    m_offers = zeros(Int, 2, m+1)
     m_offers[1, 1] = 1
 
     rec ? recursive_da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_matched, m_matched_tf, m_offers) : da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_matched, m_matched_tf, m_offers)
     return m_first ? convert_pointer_to_list(m, f_matched) : reverse(convert_pointer_to_list(m, f_matched))
 end
 
-@inbounds function get_ranks(prefs)
+@inbounds function get_ranks{T <: Integer}(prefs::Array{T, 2})
     ranks = Array(eltype(prefs), size(prefs))
     for j in 1:size(prefs, 2)
         for (r, i) in enumerate(prefs[:, j])
@@ -50,12 +37,12 @@ end
     return ranks
 end
 
-function convert_pointer_to_list(m::Int, f_matched)
+function convert_pointer_to_list{T <: Integer}(m::Int, f_matched::Array{T, 1})
     m_matched = [findfirst(f_matched, i) for i in 1:m]
     return m_matched, f_matched
 end
 
-@inbounds function proceed_pointer!(m::Int, n::Int, m_pointers, m_matched_tf, m_prefs)
+@inbounds function proceed_pointer!{T <: Integer}(m::Int, n::Int, m_pointers::Array{T, 1}, m_matched_tf, m_prefs)
     for i in 1:m
         if m_pointers[i] > n
             m_matched_tf[i] = true
@@ -70,7 +57,7 @@ end
     end
 end
 
-@inbounds function create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
+@inbounds function create_offers!{T <: Integer}(m::Int, m_prefs::Array{T, 2}, m_matched_tf, m_pointers::Array{T, 1}, m_offers)
     c::Int = 1
     for i in 1:m
         if !m_matched_tf[i] && m_prefs[m_pointers[i], i] != 0
@@ -83,7 +70,7 @@ end
     m_offers[2, c] = 0
 end
 
-@inbounds function decide_to_accept!(f_matched, f_ranks, f_prefs, m_offers, m_matched_tf)
+@inbounds function decide_to_accept!{T <: Integer}(f_matched::Array{T, 1}, f_ranks::Array{T, 2}, f_prefs::Array{T, 2}, m_offers, m_matched_tf)
     for k in 1:length(m_offers)
         m_offers[1, k] == 0 && break
         if f_matched[m_offers[2, k]] == 0
@@ -101,7 +88,7 @@ end
     end
 end
 
-function recursive_da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
+function recursive_da_match{T <: Integer}(m::Int, n::Int, f_ranks::Array{T, 2}, m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, m_pointers::Array{T, 2}, f_pointers::Array{T, 1}, m_matched_tf, m_offers)
     proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
     create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
     decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf)
@@ -109,7 +96,7 @@ function recursive_da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointer
     recursive_da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers)
 end
 
-function da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_matched, m_matched_tf, m_offers)
+function da_match{T <: Integer}(m::Int, n::Int, f_ranks::Array{T, 2}, m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, m_pointers::Array{T, 1}, f_matched::Array{T, 1}, m_matched_tf, m_offers)
     while m_offers[1, 1] != 0
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
         create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
@@ -117,28 +104,19 @@ function da_match(m::Int, n::Int, f_ranks, m_prefs, f_prefs, m_pointers, f_match
     end
 end
 
-function call_simple_match(m_prefs, f_prefs, m_first = true)
+function call_simple_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, m_first = true)
     max = maximum([maximum(m_prefs), maximum(f_prefs)])
-    T = if max < 2^8
-            UInt8
-        elseif max < 2^16
-            UInt16
-        elseif max < 2^32
-            UInt32
-        else
-            UInt64
-        end
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
     if !m_first
         m, n = n, m
         m_prefs, f_prefs = f_prefs, m_prefs
     end
-    m_pointers = zeros(T, m)
+    m_pointers = zeros(Int, m)
     m_matched_tf = falses(m)
-    f_matched = zeros(T, n)
+    f_matched = zeros(Int, n)
     f_ranks = get_ranks(f_prefs)
-    j::T = 0
+    j::Int = 0
     while !(all(m_matched_tf) == true)
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
         for i in 1:m
