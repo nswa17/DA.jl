@@ -5,7 +5,7 @@ module DA
     export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
 
 using DataStructures
-function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1})
+function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1}=ones(Int, size(f_prefs, 2)))
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
     f_ranks = get_ranks(f_prefs)
@@ -33,6 +33,8 @@ end
     end
     return ranks
 end
+
+function 
 
 function convert_pointer_to_list(m::Int, n::Int, f_pointers, f_prefs)
     f_matched = zeros(Int, (m, n))
@@ -183,14 +185,14 @@ function check_results(m_matched, f_pointers)
     return true
 end
 
-function generate_random_preference_data(m, n)
+function generate_random_preference_data(m, n, one2many = false)
     m_prefs = Array(Int, n+1, m)
-    f_prefs = Array(Int, m+1, n)
+    f_prefs = one2many ? Array(Int, m, n) : Array(Int, m+1, n)
     for i in 1:m
         m_prefs[:, i] = shuffle(collect(0:n))
     end
     for j in 1:n
-        f_prefs[:, j] = shuffle(collect(0:m))
+        f_prefs[:, j] = one2many ? shuffle(collect(1:m)) : shuffle(collect(0:m))
     end
     return m_prefs, f_prefs
 end
