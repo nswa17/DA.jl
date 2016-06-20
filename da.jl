@@ -1,10 +1,10 @@
 #DA Algorithm
 #Todo: threading
-import DataStructures
 
 module DA
     export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
 
+using DataStructures
 function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1})
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
@@ -35,16 +35,22 @@ end
 end
 
 function convert_pointer_to_list(m::Int, n::Int, f_pointers, f_prefs)
-    f_matched = Array(Int, (m, n))
-    for j in 1:n
+    f_matched = zeros(Int, (m, n))
+    m_matched = zeros(Int, m)
+    for j in 1:m
         c = 1
-        while isempty(f_pointers[j])
-            f_matched[c, j] = f_prefs[pop!(f_matched), j]
+        while !isempty(f_pointers[j])
+            f_matched[c, j] = f_prefs[pop!(f_pointers[j]), j]
             c += 1
         end
     end
-    m_matched = [findfirst(f_matched, i)/n + 1 for i in 1:m]#########
-    return m_matched, f_pointers
+    for i in 1:m
+        j::Int = findfirst(f_matched, i)
+        if j != 0
+            m_matched[i] = div(j, n) + 1
+        end
+    end
+    return m_matched, f_matched
 end
 
 @inbounds function proceed_pointer!{T <: Integer}(m::Int, n::Int, m_pointers::Array{T, 1}, m_matched_tf, m_prefs)
@@ -78,16 +84,16 @@ end
 @inbounds function decide_to_accept!{T <: Integer}(f_pointers, f_ranks::Array{T, 2}, f_prefs::Array{T, 2}, m_offers, m_matched_tf, caps::Array{T, 1})
     for k in 1:length(m_offers)
         m_offers[1, k] == 0 && break
-        if f_ranks[f_pointers[m_offers[2, k]], m_offers[2, k]] > f_ranks[m_offers[1, k], m_offers[2, k]]
-            if caps[m_offers[2, k]] < length(f_pointers[m_offers[2, k]])
-                push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
-                m_matched_tf[m_offers[1, k]] = true
-                m_matched_tf[pop!(f_pointers[m_offers[2, k]])] = false
-            else
-                push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
-                m_matched_tf[m_offers[1, k]] = true
-            end
+        #if f_ranks[top(f_pointers[m_offers[2, k]]), m_offers[2, k]] > f_ranks[m_offers[1, k], m_offers[2, k]]
+        if caps[m_offers[2, k]] < length(f_pointers[m_offers[2, k]])
+            push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
+            m_matched_tf[m_offers[1, k]] = true
+            m_matched_tf[pop!(f_pointers[m_offers[2, k]])] = false
+        else
+            push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
+            m_matched_tf[m_offers[1, k]] = true
         end
+        #end
     end
 end
 
