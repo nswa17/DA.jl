@@ -33,9 +33,12 @@ end
     end
     return ranks
 end
-
-function 
-
+"""
+function convert_pointer_to_list{T <: Integer}(m::Int, f_matched::Array{T, 1})
+    m_matched = [findfirst(f_matched, i) for i in 1:m]
+    return m_matched, f_matched
+end
+"""
 function convert_pointer_to_list(m::Int, n::Int, f_pointers, f_prefs)
     f_matched = zeros(Int, (m, n))
     m_matched = zeros(Int, m)
@@ -87,13 +90,13 @@ end
     for k in 1:length(m_offers)
         m_offers[1, k] == 0 && break
         if caps[m_offers[2, k]] < length(f_pointers[m_offers[2, k]])
-            println(f_ranks[m_offers[1, k], m_offers[2, k]])
+            #println(f_ranks[m_offers[1, k], m_offers[2, k]])
             push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
             m_matched_tf[m_offers[1, k]] = true
             #println(top(f_pointers[m_offers[2, k]]))#### bug is here
             m_matched_tf[pop!(f_pointers[m_offers[2, k]])] = false
         else
-            println(f_ranks[m_offers[1, k], m_offers[2, k]])
+            #println(f_ranks[m_offers[1, k], m_offers[2, k]])
             push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
             m_matched_tf[m_offers[1, k]] = true
         end
