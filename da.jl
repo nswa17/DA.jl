@@ -84,16 +84,17 @@ end
 @inbounds function decide_to_accept!{T <: Integer}(f_pointers, f_ranks::Array{T, 2}, f_prefs::Array{T, 2}, m_offers, m_matched_tf, caps::Array{T, 1})
     for k in 1:length(m_offers)
         m_offers[1, k] == 0 && break
-        #if f_ranks[top(f_pointers[m_offers[2, k]]), m_offers[2, k]] > f_ranks[m_offers[1, k], m_offers[2, k]]
         if caps[m_offers[2, k]] < length(f_pointers[m_offers[2, k]])
+            println(f_ranks[m_offers[1, k], m_offers[2, k]])
             push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
             m_matched_tf[m_offers[1, k]] = true
+            #println(top(f_pointers[m_offers[2, k]]))#### bug is here
             m_matched_tf[pop!(f_pointers[m_offers[2, k]])] = false
         else
+            println(f_ranks[m_offers[1, k], m_offers[2, k]])
             push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
             m_matched_tf[m_offers[1, k]] = true
         end
-        #end
     end
 end
 
