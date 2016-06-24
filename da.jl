@@ -58,7 +58,7 @@ function convert_pointer_to_list{T <: Integer}(m::Int, f_matched::Array{T, 1})
 end
 
 function convert_pointer_to_list2(m::Int, n::Int, f_pointers, f_prefs, caps)
-    f_matched = Array(Int, sum(caps))
+    f_matched = zeros(Int, sum(caps))
     m_matched = zeros(Int, m)
     indptr = Array(Int, n+1)
     i::Int = 0
@@ -67,13 +67,17 @@ function convert_pointer_to_list2(m::Int, n::Int, f_pointers, f_prefs, caps)
         indptr[i+1] = indptr[i] + caps[i]
     end
 
-    c = 1
+    total = 1
     for j in 1:n
-        while !isempty(f_pointers[j])
-            i = pop!(f_pointers[j])
-            f_matched[c] = f_prefs[i, j]
-            m_matched[f_prefs[i, j]] = j
-            c += 1
+        for c in 1:caps[j]
+            if isempty(f_pointers[j])
+                f_matched[total] = 0
+            else
+                i = pop!(f_pointers[j])
+                f_matched[total] = f_prefs[i, j]
+                m_matched[f_prefs[i, j]] = j
+            end
+            total += 1
         end
     end
 
