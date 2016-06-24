@@ -214,6 +214,29 @@ function stable_matching(m_matched, f_pointers, m_prefs, f_prefs)
     return true
 end
 
+function stable_matching(m_matched, f_matched, indptr, m_prefs, f_prefs)
+    for (i, j) in enumerate(m_matched)
+        index_of_j = findfirst(m_prefs[:, i], j)
+        if index_of_j > 1
+            for k in 1:(index_of_j-1)
+                better_j = m_prefs[k, i]
+                if better_j == 0
+                    return false
+                end
+                for another_i in f_matched[indptr[better_j]:(indptr[better_j+1]-1)]
+                    index_of_another_i = findfirst(f_prefs[:, better_j], another_i)
+                    if index_of_another_i > 1
+                        if in(i, f_prefs[:, better_j][1:(index_of_another_i-1)])
+                            return false
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return true
+end
+
 function check_results(m_matched, f_pointers)
     for (i, f) in enumerate(m_matched)
         if f != 0
