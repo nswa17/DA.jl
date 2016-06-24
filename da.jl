@@ -5,7 +5,8 @@ module DA
     export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
 
 using DataStructures
-function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1}=ones(Int, size(f_prefs, 2)))
+
+function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1})
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
     f_ranks = get_ranks(f_prefs)
