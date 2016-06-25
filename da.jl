@@ -19,7 +19,7 @@ function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, ca
     m_offers[1, 1] = 1
 
     da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_pointers, m_matched_tf, m_offers, caps)
-    return convert_pointer_to_list2(m, n, f_pointers, f_prefs, caps)
+    return convert_pointer_to_list(m, n, f_pointers, f_prefs, caps)
 end
 
 function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2})
@@ -57,7 +57,7 @@ function convert_pointer_to_list{T <: Integer}(m::Int, f_matched::Array{T, 1})
     return m_matched, f_matched
 end
 
-function convert_pointer_to_list2(m::Int, n::Int, f_pointers, f_prefs, caps)
+function convert_pointer_to_list(m::Int, n::Int, f_pointers, f_prefs, caps)
     f_matched = zeros(Int, sum(caps))
     m_matched = zeros(Int, m)
     indptr = Array(Int, n+1)
@@ -130,14 +130,16 @@ end
     end
 end
 
-@inbounds function decide_to_accept2!{T <: Integer}(f_pointers, f_ranks::Array{T, 2}, f_prefs::Array{T, 2}, m_offers, m_matched_tf, caps::Array{T, 1})
+@inbounds function decide_to_accept!{T <: Integer}(f_pointers, f_ranks::Array{T, 2}, f_prefs::Array{T, 2}, m_offers, m_matched_tf, caps::Array{T, 1})
     for k in 1:length(m_offers)
         m_offers[1, k] == 0 && break
-        if f_ranks[end, m_offers[2, k]] > f_ranks[m_offers[1, k], m_offers[2, k]]
-            push!(f_pointers[m_offers[2, k]], f_ranks[m_offers[1, k], m_offers[2, k]])
-            m_matched_tf[m_offers[1, k]] = true
-            if caps[m_offers[2, k]] < length(f_pointers[m_offers[2, k]])# if f's matching male reaches to the cap
-                m_matched_tf[f_prefs[pop!(f_pointers[m_offers[2, k]]), m_offers[2, k]]] = false#bug is here
+        i = m_offers[1, k]
+        j = m_offers[2, k]
+        if f_ranks[end, j] > f_ranks[i, j]
+            push!(f_pointers[j], f_ranks[i, j])
+            m_matched_tf[i] = true
+            if caps[j] < length(f_pointers[j])# if f's matching male reaches to the cap
+                m_matched_tf[f_prefs[pop!(f_pointers[j]), j]] = false
             end
         end
     end
@@ -147,7 +149,7 @@ function da_match{T <: Integer}(m::Int, n::Int, f_ranks::Array{T, 2}, m_prefs::A
     while m_offers[1, 1] != 0
         proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
         create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
-        decide_to_accept2!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf, caps)
+        decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf, caps)
     end
 end
 
