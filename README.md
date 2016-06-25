@@ -9,8 +9,8 @@ julia code for DA Algorithm
 
 ### DA.call_match
 
-: ```(m_prefs, f_prefs[, rec, m_first]) ->
- matched_males_list, matched_females_list```
+: ```(m_prefs, f_prefs[, caps]) ->
+ matched_males_list, matched_females_list[, indptr]```
 
 : call DA algorithm with given argument
 
@@ -18,9 +18,7 @@ julia code for DA Algorithm
 
 ```f_prefs``` -- 2 dimensional array of size ```(m + 1) * n```
 
-```rec``` -- false by defalt, an optional argument to call recursive DA algorithm
-
-```m_first``` -- true by default, an optional argument to decide which gender offers to the other
+```caps``` -- 1 dimensional array of length ```n```
 
 ### DA.call_simple_match
 
@@ -59,7 +57,7 @@ julia code for DA Algorithm
 
 ### DA.stable_matching
 
-: ```(m_matched, f_matched, m_prefs, f_prefs) -> if matching is stable then true else false```
+: ```(m_matched, f_matched[, indptr], m_prefs, f_prefs) -> if matching is stable then true else false```
 
 : checks if matching is stable
 
