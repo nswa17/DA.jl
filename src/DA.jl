@@ -1,11 +1,63 @@
-#DA Algorithm
-#Todo: threading
-
 module DA
-    export call_match, check_data, generate_random_preference_data, check_results, stable_matching, call_simple_match
+    export deferred_acceptance, generate_random_prefs
 
-using DataStructures
+function deferred_acceptance{T <: Integer}(m_prefs::Array{Array{T, 1}, 1}, f_prefs::Array{Array{T, 1}, 1})
+    m = length(m_prefs)
+    n = length(f_prefs)
 
+    f_ranks = zeros(Int, m+1, n)
+    for j in 1:n
+        for (r, i) in enumerate(f_prefs[j])
+            f_ranks[i, j] = r
+        end
+    end
+    f_ranks[m+1, :] = m + 1
+
+    m_pointers = ones(Int, m)
+    f_matched = fill(m+1, n)
+    m_matched = zeros(Int, m)
+    m_searching = Array(Int, m)
+    top = m
+    for i in 1:m
+        m_searching[i] = i
+    end
+
+    while top > 0
+        i = m_searching[top]
+        if m_pointers[i] > length(m_prefs[i])
+            top -= 1
+            continue
+        end
+        f_proposed = m_prefs[i][m_pointers[i]]
+        current_m_of_f = f_matched[f_proposed]
+
+        if length(f_prefs[f_proposed]) != 0#if f want to couple with someone(?)
+            if f_ranks[i, f_proposed] != 0 && f_ranks[i, f_proposed] < f_ranks[current_m_of_f, f_proposed]
+                f_matched[f_proposed] = i
+                top -= 1
+                if current_m_of_f != m + 1
+                    top += 1
+                    m_searching[top] = current_m_of_f
+                    m_pointers[current_m_of_f] += 1
+                end
+            else
+                m_pointers[i] += 1
+            end
+        end
+    end
+
+    for (j, i) in enumerate(f_matched)
+        if i == m + 1
+            f_matched[j] = 0
+        else
+            m_matched[i] = j
+        end
+    end
+
+    return m_matched, f_matched
+end
+
+"""
 function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1})
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
@@ -198,89 +250,18 @@ function call_simple_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T,
     return m_first ? (Int[findfirst(f_pointers, i) for i in 1:m], f_pointers) : (f_pointers, [findfirst(f_pointers, i) for i in 1:m])
 end
 
-#####functions for debug#####
+"""
 
-function stable_matching(m_matched, f_pointers, m_prefs, f_prefs)
-    for (i, j) in enumerate(m_matched)
-        j == 0 && continue
-        index_of_j = findfirst(m_prefs[:, i], j)
-        if index_of_j > 1
-            for k in 1:(index_of_j-1)
-                better_j = m_prefs[k, i]
-                better_j == 0 && continue
-                index_of_i = findfirst(f_prefs[:, better_j], f_pointers[better_j])
-                if index_of_i > 1
-                    if in(i, f_prefs[:, better_j][1:(index_of_i-1)])
-                        return false
-                    end
-                end
-            end
-        end
-    end
-    return true
-end
-
-function stable_matching(m_matched, f_matched, indptr, m_prefs, f_prefs)
-    for (i, j) in enumerate(m_matched)
-        index_of_j = findfirst(m_prefs[:, i], j)
-        if index_of_j > 1
-            for k in 1:(index_of_j-1)
-                better_j = m_prefs[k, i]
-                if better_j == 0
-                    return false
-                end
-                for another_i in f_matched[indptr[better_j]:(indptr[better_j+1]-1)]
-                    index_of_another_i = findfirst(f_prefs[:, better_j], another_i)
-                    if index_of_another_i > 1
-                        if in(i, f_prefs[:, better_j][1:(index_of_another_i-1)])
-                            return false
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return true
-end
-
-function check_results(m_matched, f_pointers)
-    for (i, f) in enumerate(m_matched)
-        if f != 0
-            f_pointers[f] != i && error("Matching Incomplete with male $i, m_matched[$i] = $(m_matched[i]) though f_pointers[$f] = $(f_pointers[f])")
-        elseif f == 0
-            in(i, f_pointers) && error("Matching Incomplete with male $i, m_matched[$i] = $(m_matched[i]) though f_pointers[$f] = $(f_pointers[f])")
-        end
-    end
-    for (j, m) in enumerate(f_pointers)
-        if m != 0
-            m_matched[m] != j && error("Matching Incomplete with female $j, f_pointers[$j] = $(f_pointers[j]) though m_matched[$m] = $(m_matched[m])")
-        elseif m == 0
-            in(j, m_matched) && error("Matching Incomplete with female $j, f_pointers[$j] = $(f_pointers[j]) though m_matched[$m] = $(m_matched[m])")
-        end
-    end
-    return true
-end
-
-function generate_random_preference_data(m, n, one2many = false)
-    m_prefs = Array(Int, n+1, m)
-    f_prefs = one2many ? Array(Int, m, n) : Array(Int, m+1, n)
+function generate_random_prefs{T <: Integer}(m::T, n::T)
+    m_prefs = Array(Vector{Int}, m)
+    f_prefs = Array(Vector{Int}, n)
     for i in 1:m
-        m_prefs[:, i] = shuffle(collect(0:n))
+        m_prefs[i] = shuffle(collect(1:n))
     end
     for j in 1:n
-        f_prefs[:, j] = one2many ? shuffle(collect(1:m)) : shuffle(collect(0:m))
+        f_prefs[j] = shuffle(collect(1:m))
     end
     return m_prefs, f_prefs
-end
-
-function check_data(m_prefs, f_prefs)
-    m = size(m_prefs, 2)
-    n = size(f_prefs, 2)
-    size(m_prefs, 1) != n+1 && error("the size of m_prefs must be (n+1, *)")
-    size(f_prefs, 1) != m+1 && error("the size of f_prefs must be (m+1, *)")
-    all([Set(m_prefs[:, i]) == Set(0:n) for i in 1:m]) || error("error in m_prefs")
-    all([Set(f_prefs[:, j]) == Set(0:m) for j in 1:n]) || error("error in f_prefs")
-    return true
 end
 
 end
