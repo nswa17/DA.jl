@@ -1,30 +1,28 @@
 # DA.jl
-julia code for DA Algorithm
+julia implementation of Deferred Acceptance Algorithm
 
 ## Usage
 
 ### DA
 
-: module
+module
 
-### DA.main
+### DA.deferred_acceptance
 
-: ```(m_prefs, f_prefs[, caps]) ->
+```(m_prefs, f_prefs[, caps]) ->
  matched_males_list, matched_females_list[, indptr]```
 
-: call DA algorithm with given argument
+call DA algorithm with given arguments
 
-```m_prefs``` -- 2 dimensional array of size ```(n + 1) * m```
+```m_prefs``` -- 1-d array of arrays
 
-```f_prefs``` -- 2 dimensional array of size ```(m + 1) * n```
-
-```caps``` -- 1 dimensional array of length ```n```
+```f_prefs``` -- 1-d array of arrays
 
 ### DA.generate_random_prefs
 
-: ```(m, n) -> (m_prefs, f_prefs)```
+```(m, n) -> (m_prefs, f_prefs)```
 
-: generates preference data
+generates preference data
 
 ```m``` -- number of males
 
@@ -34,11 +32,11 @@ julia code for DA Algorithm
 
 ```
 
-include("da.jl")
+using DA
 
 m, n = 100, 100
-m_prefs, f_prefs = DA.generate_random_prefs(m, n)
+m_prefs, f_prefs = generate_random_prefs(m, n)
 
-m_matched, f_matched = DA.main(m_prefs, f_prefs) # matches males and females
+m_matched, f_matched = deferred_acceptance(m_prefs, f_prefs)
 
 ```
