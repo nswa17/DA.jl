@@ -23,6 +23,7 @@ function adjust_matched!(m_matched::Vector{Int}, f_matched::Vector{Int})
 end
 
 function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vector{Int}})
+    # Set Up
     m = length(m_prefs)
     n = length(f_prefs)
 
@@ -33,11 +34,12 @@ function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vecto
     f_matched = fill(m+1, n)
     m_matched = zeros(Int, m)
     m_searching = Array(Int, m)
-    remaining = m
     for i in 1:m
         m_searching[i] = i
     end
+    remaining::Int = m
 
+    # Main Loop
     while remaining > 0
         i = m_searching[remaining]
         if m_pointers[i] > length(m_prefs[i])
@@ -47,18 +49,16 @@ function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vecto
         f_proposed = m_prefs[i][m_pointers[i]]
         current_m_of_f = f_matched[f_proposed]
 
-        if length(f_prefs[f_proposed]) != 0#if f want to couple with someone(?)
-            if f_ranks[i, f_proposed] != 0 && f_ranks[i, f_proposed] < f_ranks[current_m_of_f, f_proposed]
-                f_matched[f_proposed] = i
-                remaining -= 1
-                if current_m_of_f != m + 1
-                    remaining += 1
-                    m_searching[remaining] = current_m_of_f
-                    m_pointers[current_m_of_f] += 1
-                end
-            else
-                m_pointers[i] += 1
+        if 0 < f_ranks[i, f_proposed] < f_ranks[current_m_of_f, f_proposed]
+            f_matched[f_proposed] = i
+            remaining -= 1
+            if current_m_of_f != m + 1
+                remaining += 1
+                m_searching[remaining] = current_m_of_f
+                m_pointers[current_m_of_f] += 1
             end
+        else
+            m_pointers[i] += 1
         end
     end
 
@@ -221,44 +221,6 @@ function da_match{T <: Integer}(m::Int, n::Int, f_ranks::Array{T, 2}, m_prefs::A
         decide_to_accept!(f_matched, f_ranks, f_prefs, m_offers, m_matched_tf)
     end
 end
-
-function call_simple_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, m_first = true)
-    max = maximum([maximum(m_prefs), maximum(f_prefs)])
-    m::Int = size(m_prefs, 2)
-    n::Int = size(f_prefs, 2)
-    if !m_first
-        m, n = n, m
-        m_prefs, f_prefs = f_prefs, m_prefs
-    end
-    m_pointers = zeros(Int, m)
-    m_matched_tf = falses(m)
-    f_pointers = zeros(Int, n)
-    f_ranks = get_ranks(f_prefs)
-    j::Int = 0
-    while !(all(m_matched_tf) == true)
-        proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
-        for i in 1:m
-            if !m_matched_tf[i]
-                j = m_prefs[m_pointers[i], i]
-                j == 0 && continue
-                if f_pointers[j] == 0
-                    if f_ranks[end, j] > f_ranks[i, j]
-                        f_pointers[j] = i
-                        m_matched_tf[i] = true
-                    end
-                else
-                    if f_ranks[f_pointers[j], j] > f_ranks[i, j]
-                        m_matched_tf[f_pointers[j]] = false
-                        f_pointers[j] = i
-                        m_matched_tf[i] = true
-                    end
-                end
-            end
-        end
-    end
-    return m_first ? (Int[findfirst(f_pointers, i) for i in 1:m], f_pointers) : (f_pointers, [findfirst(f_pointers, i) for i in 1:m])
-end
-
 
 
 function generate_random_prefs{T <: Integer}(m::T, n::T)
