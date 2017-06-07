@@ -1,50 +1,17 @@
 module DA
-    export deferred_acceptance, generate_random_prefs
+    export deferred_acceptance, generate_random_prefs, call_match
 
-function deferred_acceptance{T <: Integer}(m_prefs::Array{Array{T, 1}, 1}, f_prefs::Array{Array{T, 1}, 1})
-    m = length(m_prefs)
-    n = length(f_prefs)
-
-    f_ranks = zeros(Int, m+1, n)
+function create_ranks!(m::Int, n::Int, prefs::Vector{Vector{Int}}, ranks::Array{Int, 2})
     for j in 1:n
-        for (r, i) in enumerate(f_prefs[j])
-            f_ranks[i, j] = r
+        for (r, i) in enumerate(prefs[j])
+            @inbounds ranks[i, j] = r
         end
     end
-    f_ranks[m+1, :] = m + 1
+    ranks[m+1, :] = m + 1
+end
 
-    m_pointers = ones(Int, m)
-    f_matched = fill(m+1, n)
-    m_matched = zeros(Int, m)
-    m_searching = Array(Int, m)
-    top = m
-    for i in 1:m
-        m_searching[i] = i
-    end
-
-    while top > 0
-        i = m_searching[top]
-        if m_pointers[i] > length(m_prefs[i])
-            top -= 1
-            continue
-        end
-        f_proposed = m_prefs[i][m_pointers[i]]
-        current_m_of_f = f_matched[f_proposed]
-
-        if length(f_prefs[f_proposed]) != 0#if f want to couple with someone(?)
-            if f_ranks[i, f_proposed] != 0 && f_ranks[i, f_proposed] < f_ranks[current_m_of_f, f_proposed]
-                f_matched[f_proposed] = i
-                top -= 1
-                if current_m_of_f != m + 1
-                    top += 1
-                    m_searching[top] = current_m_of_f
-                    m_pointers[current_m_of_f] += 1
-                end
-            else
-                m_pointers[i] += 1
-            end
-        end
-    end
+function adjust_matched!(m_matched::Vector{Int}, f_matched::Vector{Int})
+    m::Int = length(m_matched)
 
     for (j, i) in enumerate(f_matched)
         if i == m + 1
@@ -53,11 +20,53 @@ function deferred_acceptance{T <: Integer}(m_prefs::Array{Array{T, 1}, 1}, f_pre
             m_matched[i] = j
         end
     end
+end
 
+function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vector{Int}})
+    m = length(m_prefs)
+    n = length(f_prefs)
+
+    f_ranks = zeros(Int, m+1, n)
+    create_ranks!(m, n, f_prefs, f_ranks)
+
+    m_pointers = ones(Int, m)
+    f_matched = fill(m+1, n)
+    m_matched = zeros(Int, m)
+    m_searching = Array(Int, m)
+    remaining = m
+    for i in 1:m
+        m_searching[i] = i
+    end
+
+    while remaining > 0
+        i = m_searching[remaining]
+        if m_pointers[i] > length(m_prefs[i])
+            remaining -= 1
+            continue
+        end
+        f_proposed = m_prefs[i][m_pointers[i]]
+        current_m_of_f = f_matched[f_proposed]
+
+        if length(f_prefs[f_proposed]) != 0#if f want to couple with someone(?)
+            if f_ranks[i, f_proposed] != 0 && f_ranks[i, f_proposed] < f_ranks[current_m_of_f, f_proposed]
+                f_matched[f_proposed] = i
+                remaining -= 1
+                if current_m_of_f != m + 1
+                    remaining += 1
+                    m_searching[remaining] = current_m_of_f
+                    m_pointers[current_m_of_f] += 1
+                end
+            else
+                m_pointers[i] += 1
+            end
+        end
+    end
+
+    adjust_matched!(m_matched, f_matched)
     return m_matched, f_matched
 end
 
-"""
+
 function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1})
     m::Int = size(m_prefs, 2)
     n::Int = size(f_prefs, 2)
@@ -250,7 +259,7 @@ function call_simple_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T,
     return m_first ? (Int[findfirst(f_pointers, i) for i in 1:m], f_pointers) : (f_pointers, [findfirst(f_pointers, i) for i in 1:m])
 end
 
-"""
+
 
 function generate_random_prefs{T <: Integer}(m::T, n::T)
     m_prefs = Array(Vector{Int}, m)

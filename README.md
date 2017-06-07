@@ -1,4 +1,5 @@
 # DA.jl
+
 julia implementation of Deferred Acceptance Algorithm
 
 ## Usage
@@ -29,13 +30,11 @@ generates preference data
 
 ## Example
 
-```
-
+```julia
 using DA
 
 m, n = 100, 100
 m_prefs, f_prefs = generate_random_prefs(m, n)
 
 m_matched, f_matched = deferred_acceptance(m_prefs, f_prefs)
-
 ```
