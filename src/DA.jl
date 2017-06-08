@@ -1,5 +1,7 @@
 module DA
-    export deferred_acceptance, generate_random_prefs, call_match
+    export deferred_acceptance, generate_random_prefs
+
+using DataStructures: binary_maxheap
 
 function create_ranks!(m::Int, n::Int, prefs::Vector{Vector{Int}}, ranks::Array{Int, 2})
     for j in 1:n
@@ -66,6 +68,24 @@ function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vecto
     return m_matched, f_matched
 end
 
+function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vector{Int}}, caps::Vector{Int})
+    m::Int = length(m_prefs)
+    n::Int = length(f_prefs)
+    m_prefs_2d = zeros(Int, n+1, m)
+    f_prefs_2d = zeros(Int, m+1, n)
+    for i in 1:m
+        for c in 1:length(m_prefs[i])
+            m_prefs_2d[c, i] = m_prefs[i][c]
+        end
+    end
+    for j in 1:n
+        for c in 1:length(f_prefs[j])
+            f_prefs_2d[c, j] = f_prefs[j][c]
+        end
+    end
+    return call_match(m_prefs_2d, f_prefs_2d, caps)
+end
+
 
 function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, caps::Array{T, 1})
     m::Int = size(m_prefs, 2)
@@ -83,22 +103,6 @@ function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, ca
     return convert_pointer_to_list(m, n, f_pointers, f_prefs, caps)
 end
 
-function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2})
-    m::Int = size(m_prefs, 2)
-    n::Int = size(f_prefs, 2)
-
-    f_ranks = get_ranks(f_prefs)
-    m_pointers = zeros(Int, m)
-    f_matched = zeros(Int, n)
-
-    m_matched_tf = falses(m)
-    m_offers = zeros(Int, 2, m+1)
-    m_offers[1, 1] = 1
-
-    da_match(m, n, f_ranks, m_prefs, f_prefs, m_pointers, f_matched, m_matched_tf, m_offers)
-    return convert_pointer_to_list(m, f_matched)
-end
-
 @inbounds function get_ranks{T <: Integer}(prefs::Array{T, 2})
     ranks = Array(eltype(prefs), size(prefs))
     for j in 1:size(prefs, 2)
@@ -111,11 +115,6 @@ end
         end
     end
     return ranks
-end
-
-function convert_pointer_to_list{T <: Integer}(m::Int, f_matched::Array{T, 1})
-    m_matched = [findfirst(f_matched, i) for i in 1:m]
-    return m_matched, f_matched
 end
 
 function convert_pointer_to_list(m::Int, n::Int, f_pointers, f_prefs, caps)
@@ -173,24 +172,6 @@ end
     m_offers[2, c] = 0
 end
 
-@inbounds function decide_to_accept!{T <: Integer}(f_matched::Array{T, 1}, f_ranks::Array{T, 2}, f_prefs::Array{T, 2}, m_offers, m_matched_tf)
-    for k in 1:length(m_offers)
-        m_offers[1, k] == 0 && break
-        if f_matched[m_offers[2, k]] == 0
-            if f_ranks[end, m_offers[2, k]] > f_ranks[m_offers[1, k], m_offers[2, k]]
-                f_matched[m_offers[2, k]] = m_offers[1, k]
-                m_matched_tf[m_offers[1, k]] = true
-            end
-        else
-            if f_ranks[f_matched[m_offers[2, k]], m_offers[2, k]] > f_ranks[m_offers[1, k], m_offers[2, k]]
-                m_matched_tf[f_matched[m_offers[2, k]]] = false
-                f_matched[m_offers[2, k]] = m_offers[1, k]
-                m_matched_tf[m_offers[1, k]] = true
-            end
-        end
-    end
-end
-
 @inbounds function decide_to_accept!{T <: Integer}(f_pointers, f_ranks::Array{T, 2}, f_prefs::Array{T, 2}, m_offers, m_matched_tf, caps::Array{T, 1})
     for k in 1:length(m_offers)
         m_offers[1, k] == 0 && break
@@ -213,15 +194,6 @@ function da_match{T <: Integer}(m::Int, n::Int, f_ranks::Array{T, 2}, m_prefs::A
         decide_to_accept!(f_pointers, f_ranks, f_prefs, m_offers, m_matched_tf, caps)
     end
 end
-
-function da_match{T <: Integer}(m::Int, n::Int, f_ranks::Array{T, 2}, m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, m_pointers::Array{T, 1}, f_matched::Array{T, 1}, m_matched_tf, m_offers)
-    while m_offers[1, 1] != 0
-        proceed_pointer!(m, n, m_pointers, m_matched_tf, m_prefs)
-        create_offers!(m, m_prefs, m_matched_tf, m_pointers, m_offers)
-        decide_to_accept!(f_matched, f_ranks, f_prefs, m_offers, m_matched_tf)
-    end
-end
-
 
 function generate_random_prefs{T <: Integer}(m::T, n::T)
     m_prefs = Array(Vector{Int}, m)
