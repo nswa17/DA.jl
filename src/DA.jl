@@ -2,7 +2,7 @@
 module DA
     export deferred_acceptance, generate_random_prefs
 
-using DataStructures: binary_maxheap
+using DataStructures: binary_maxheap, top, pop!, push!, length
 
 type FixedSizeBinaryMaxHeap
     heap::Array{Int}
@@ -29,6 +29,7 @@ function Base.push!(bmh::FixedSizeBinaryMaxHeap, value::Int)
     reshape_up!(bmh)
 end
 
+"""
 function top(bmh::FixedSizeBinaryMaxHeap)
     if bmh.ind == 0
         return 0
@@ -36,6 +37,7 @@ function top(bmh::FixedSizeBinaryMaxHeap)
         return bmh.heap[1]
     end
 end
+"""
 
 function exchange!(bmh::FixedSizeBinaryMaxHeap, priority::Int)
     bmh.heap[1] = priority
@@ -161,12 +163,13 @@ function create_ranks_rev!(prefs::Vector{Vector{Int}}, ranks::Array{Int, 2})
     end
 end
 
-function adjust_matched_rev!(resp_prefs::Vector{Vector{Int}}, prop_matched::Vector{Int}, resp_matched::Vector{Int}, resp_matched_ranks::Vector{FixedSizeBinaryMaxHeap}, caps::Vector{Int})
+function adjust_matched_rev!(resp_prefs::Vector{Vector{Int}}, prop_matched::Vector{Int}, resp_matched::Vector{Int}, resp_matched_ranks, caps::Vector{Int})
     ctr = 1
     for j in 1:length(resp_matched_ranks)
         for k in 1:caps[j]
             if k <= length(resp_matched_ranks[j])
-                p = resp_prefs[j][resp_matched_ranks[j][k]]
+                p_rank = pop!(resp_matched_ranks[j])
+                p = resp_prefs[j][p_rank]
                 prop_matched[p] = j
                 resp_matched[ctr] = p
             else
@@ -188,7 +191,7 @@ function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Ve
     create_ranks_rev!(resp_prefs, resp_ranks)
 
     prop_ptrs = ones(Int, num_props)
-    resp_matched_ranks = [FixedSizeBinaryMaxHeap(caps[j]) for j in 1:num_resps]
+    resp_matched_ranks = [binary_maxheap(Int) for j in 1:num_resps]
     prop_matched = Array(Int, num_props)
     resp_matched = Array(Int, sum(caps))
     prop_unmatched = Array(Int, num_props)
@@ -205,18 +208,22 @@ function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Ve
             continue
         end
         r = prop_prefs[p][prop_ptrs[p]]
-        least_p_rank = top(resp_matched_ranks[r])
+        if length(resp_matched_ranks[r]) > 0
+            least_p_rank = top(resp_matched_ranks[r])
+        else
+            least_p_rank = 0
+        end
         p_rank = resp_ranks[p, r]
-        if p_rank == 0
+        if p_rank == 0#unacceptable
             prop_ptrs[p] += 1
-        elseif !isfull(resp_matched_ranks[r])
+        elseif length(resp_matched_ranks[r]) < caps[r]#acceptable and vacant
             push!(resp_matched_ranks[r], p_rank)
             remaining -= 1
-        elseif least_p_rank > p_rank
-            pop!(resp_matched_ranks[r])
-            push!(resp_matched_ranks[r], p_rank)
+        elseif least_p_rank > p_rank#acceptable and not vacant and preferable
             least_p = resp_prefs[r][least_p_rank]
             prop_ptrs[least_p] += 1
+            pop!(resp_matched_ranks[r])
+            push!(resp_matched_ranks[r], p_rank)
         else
             prop_ptrs[p] += 1
         end
