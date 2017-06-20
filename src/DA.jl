@@ -221,6 +221,7 @@ function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Ve
             remaining -= 1
         elseif least_p_rank > p_rank#acceptable and not vacant and preferable
             least_p = resp_prefs[r][least_p_rank]
+            prop_unmatched[remaining] = least_p
             prop_ptrs[least_p] += 1
             pop!(resp_matched_ranks[r])
             push!(resp_matched_ranks[r], p_rank)
