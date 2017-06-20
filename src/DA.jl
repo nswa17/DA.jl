@@ -2,7 +2,7 @@
 module DA
     export deferred_acceptance, generate_random_prefs
 
-using DataStructures: binary_maxheap
+using DataStructures: binary_maxheap, length, pop!, push!, top
 
 type FixedSizeBinaryMaxHeap
     heap::Array{Int}
@@ -29,7 +29,7 @@ function Base.push!(bmh::FixedSizeBinaryMaxHeap, value::Int)
     reshape_up!(bmh)
 end
 
-function top(bmh::FixedSizeBinaryMaxHeap)
+function top2(bmh::FixedSizeBinaryMaxHeap)
     if bmh.ind == 0
         return 0
     else
@@ -161,6 +161,23 @@ function create_ranks_rev!(prefs::Vector{Vector{Int}}, ranks::Array{Int, 2})
     end
 end
 
+function adjust_matched_rev!(resp_prefs::Vector{Vector{Int}}, prop_matched::Vector{Int}, resp_matched::Vector{Int}, resp_matched_ranks, caps::Vector{Int})
+    ctr = 1
+    for j in 1:length(resp_matched_ranks)
+        for k in 1:caps[j]
+            if k <= length(resp_matched_ranks[j])
+                rank = pop!(resp_matched_ranks[j])
+                p = resp_prefs[j][rank]
+                prop_matched[p] = j
+                resp_matched[ctr] = p
+            else
+                resp_matched[ctr] = 0
+            end
+            ctr += 1
+        end
+    end
+end
+
 function adjust_matched_rev!(resp_prefs::Vector{Vector{Int}}, prop_matched::Vector{Int}, resp_matched::Vector{Int}, resp_matched_ranks::Vector{FixedSizeBinaryMaxHeap}, caps::Vector{Int})
     ctr = 1
     for j in 1:length(resp_matched_ranks)
@@ -205,7 +222,7 @@ function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Ve
             continue
         end
         r = prop_prefs[p][prop_ptrs[p]]
-        least_p_rank = top(resp_matched_ranks[r])
+        least_p_rank = top2(resp_matched_ranks[r])
         p_rank = resp_ranks[p, r]
         if p_rank == 0
             prop_ptrs[p] += 1
@@ -218,6 +235,63 @@ function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Ve
             least_p = resp_prefs[r][least_p_rank]
             prop_unmatched[remaining] = least_p
             prop_ptrs[least_p] += 1
+        else
+            prop_ptrs[p] += 1
+        end
+    end
+
+    adjust_matched_rev!(resp_prefs, prop_matched, resp_matched, resp_matched_ranks, caps)
+    indptr = Array(Int, num_resps+1)
+    indptr[1] = 1
+    for j in 1:num_resps
+        indptr[j+1] = indptr[j] + caps[j]
+    end
+    return prop_matched, resp_matched, indptr
+end
+
+function deferred_acceptance_rev_offheap(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}}, caps::Vector{Int})
+    # Set Up
+    num_props = length(prop_prefs)
+    num_resps = length(resp_prefs)
+
+    resp_ranks = zeros(Int, num_props, num_resps)
+    create_ranks_rev!(resp_prefs, resp_ranks)
+
+    prop_ptrs = ones(Int, num_props)
+    resp_matched_ranks = [binary_maxheap(Int) for j in 1:num_resps]
+    prop_matched = Array(Int, num_props)
+    resp_matched = Array(Int, sum(caps))
+    prop_unmatched = Array(Int, num_props)
+    for i in 1:num_props
+        prop_unmatched[i] = i
+    end
+    remaining::Int = num_props
+
+    # Main Loop
+    while remaining > 0
+        p = prop_unmatched[remaining]
+        if prop_ptrs[p] > length(prop_prefs[p])#p no longer wants to find a partner
+            remaining -= 1
+            continue
+        end
+        r = prop_prefs[p][prop_ptrs[p]]
+        if length(resp_matched_ranks[r]) > 0
+            least_p_rank = top(resp_matched_ranks[r])
+        else
+            least_p_rank = 0
+        end
+        p_rank = resp_ranks[p, r]
+        if p_rank == 0#unacceptable
+            prop_ptrs[p] += 1
+        elseif length(resp_matched_ranks[r]) < caps[r]#acceptable and vacant
+            push!(resp_matched_ranks[r], p_rank)
+            remaining -= 1
+        elseif least_p_rank > p_rank#acceptable and not vacant and preferable
+            least_p = resp_prefs[r][least_p_rank]
+            prop_unmatched[remaining] = least_p
+            prop_ptrs[least_p] += 1
+            pop!(resp_matched_ranks[r])
+            push!(resp_matched_ranks[r], p_rank)
         else
             prop_ptrs[p] += 1
         end
