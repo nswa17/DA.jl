@@ -1,7 +1,91 @@
+# WHAT IF caps[i] = 0
 module DA
     export deferred_acceptance, generate_random_prefs
 
 using DataStructures: binary_maxheap
+
+type FixedSizeBinaryMaxHeap
+    heap::Array{Int}
+    ind::Int
+    max_length::Int
+    FixedSizeBinaryMaxHeap(m_max::Int) = new(Array(Int, m_max), 0, m_max)
+end
+
+function Base.length(bmh::FixedSizeBinaryMaxHeap)
+    return bmh.ind
+end
+
+function isfull(bmh::FixedSizeBinaryMaxHeap)
+    if bmh.max_length == bmh.ind
+        return true
+    else
+        return false
+    end
+end
+
+function Base.push!(bmh::FixedSizeBinaryMaxHeap, value::Int)
+    bmh.ind += 1
+    bmh.heap[bmh.ind] = value
+    reshape_up!(bmh)
+end
+
+function top(bmh::FixedSizeBinaryMaxHeap)
+    if bmh.ind == 0
+        return 0
+    else
+        return bmh.heap[1]
+    end
+end
+
+function exchange!(bmh::FixedSizeBinaryMaxHeap, priority::Int)
+    bmh.heap[1] = priority
+    reshape_down!(bmh)
+end
+
+function Base.pop!(bmh::FixedSizeBinaryMaxHeap)
+    ret_val = bmh.heap[1]
+    bmh.heap[1] = bmh.heap[bmh.ind]
+    bmh.ind -= 1
+    reshape_down!(bmh)
+    return ret_val
+end
+
+function Base.getindex(bmh::FixedSizeBinaryMaxHeap, ind::Int)
+    return bmh.heap[ind]
+end
+
+function reshape_down!(bmh::FixedSizeBinaryMaxHeap)
+    current_ind = 1
+    while true
+        c1, c2 = current_ind * 2, current_ind * 2 + 1
+        if c1 > bmh.ind
+            break
+        elseif c2 > bmh.ind
+            c = c1
+        else
+            c = bmh.heap[c1] < bmh.heap[c2] ? c2 : c1
+        end
+        if bmh.heap[current_ind] < bmh.heap[c]
+            bmh.heap[c], bmh.heap[current_ind] = bmh.heap[current_ind], bmh.heap[c]
+            current_ind = c
+        else
+            break
+        end
+    end
+end
+
+function reshape_up!(bmh::FixedSizeBinaryMaxHeap)
+    current_ind = bmh.ind
+    while true
+        par = current_ind >> 1
+        if par == 0 || bmh.heap[current_ind] <= bmh.heap[par]
+            break
+        else
+            bmh.heap[current_ind], bmh.heap[par] = bmh.heap[par], bmh.heap[current_ind]
+        end
+        current_ind = par
+    end
+end
 
 function create_ranks!(m::Int, n::Int, prefs::Vector{Vector{Int}}, ranks::Array{Int, 2})
     for j in 1:n
@@ -66,6 +150,85 @@ function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vecto
 
     adjust_matched!(m_matched, f_matched)
     return m_matched, f_matched
+end
+
+function create_ranks_rev!(prefs::Vector{Vector{Int}}, ranks::Array{Int, 2})
+    n::Int = length(prefs)
+    for j in 1:n
+        for (r, i) in enumerate(prefs[j])
+            @inbounds ranks[i, j] = r
+        end
+    end
+end
+
+function adjust_matched_rev!(resp_prefs::Vector{Vector{Int}}, prop_matched::Vector{Int}, resp_matched::Vector{Int}, resp_matched_ranks::Vector{FixedSizeBinaryMaxHeap}, caps::Vector{Int})
+    ctr = 1
+    for j in 1:length(resp_matched_ranks)
+        for k in 1:caps[j]
+            if k <= length(resp_matched_ranks[j])
+                p = resp_prefs[j][resp_matched_ranks[j][k]]
+                prop_matched[p] = j
+                resp_matched[ctr] = p
+            else
+                resp_matched[ctr] = 0
+            end
+            ctr += 1
+        end
+    end
+end
+
+deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}}) = deferred_acceptance_rev(prop_prefs, resp_prefs, ones(Int, length(resp_prefs)))
+
+function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}}, caps::Vector{Int})
+    # Set Up
+    num_props = length(prop_prefs)
+    num_resps = length(resp_prefs)
+
+    resp_ranks = zeros(Int, num_props, num_resps)
+    create_ranks_rev!(resp_prefs, resp_ranks)
+
+    prop_ptrs = ones(Int, num_props)
+    resp_matched_ranks = [FixedSizeBinaryMaxHeap(caps[j]) for j in 1:num_resps]
+    prop_matched = Array(Int, num_props)
+    resp_matched = Array(Int, sum(caps))
+    prop_unmatched = Array(Int, num_props)
+    for i in 1:num_props
+        prop_unmatched[i] = i
+    end
+    remaining::Int = num_props
+
+    # Main Loop
+    while remaining > 0
+        p = prop_unmatched[remaining]
+        if prop_ptrs[p] > length(prop_prefs[p])#p no longer wants to find a partner
+            remaining -= 1
+            continue
+        end
+        r = prop_prefs[p][prop_ptrs[p]]
+        least_p_rank = top(resp_matched_ranks[r])
+        p_rank = resp_ranks[p, r]
+        if p_rank == 0
+            prop_ptrs[p] += 1
+        elseif !isfull(resp_matched_ranks[r])
+            push!(resp_matched_ranks[r], p_rank)
+            remaining -= 1
+        elseif least_p_rank > p_rank
+            pop!(resp_matched_ranks[r])
+            push!(resp_matched_ranks[r], p_rank)
+            least_p = resp_prefs[r][least_p_rank]
+            prop_ptrs[least_p] += 1
+        else
+            prop_ptrs[p] += 1
+        end
+    end
+
+    adjust_matched_rev!(resp_prefs, prop_matched, resp_matched, resp_matched_ranks, caps)
+    indptr = Array(Int, num_resps+1)
+    indptr[1] = 1
+    for j in 1:num_resps
+        indptr[j+1] = indptr[j] + caps[j]
+    end
+    return prop_matched, resp_matched, indptr
 end
 
 function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vector{Int}}, caps::Vector{Int})
