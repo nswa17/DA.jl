@@ -1,15 +1,19 @@
 include("tools.jl")
 import .DATools: FixedSizeBinaryMaxHeap, length, pop!, push!, top, getindex
 
-function create_ranks!{T <: Integer}(prefs::Vector{Vector{Int}}, ranks::Array{T, 2})
-    for j in 1:length(prefs)
-        for (r, i) in enumerate(prefs[j])
-            @inbounds ranks[i, j] = r
+function create_resp_ranks(num_props::Int, num_resps::Int, resp_prefs::Vector{Vector{Int}})
+    resp_ranks = zeros(UInt16, num_props, num_resps)
+    for j in 1:num_resps
+        for (r, i) in enumerate(resp_prefs[j])
+            @inbounds resp_ranks[i, j] = r
         end
     end
+    return resp_ranks
 end
 
-function adjust_matched!(resp_prefs::Vector{Vector{Int}}, prop_matched::Vector{Int}, resp_matched::Vector{Int}, resp_matched_ranks::Vector{FixedSizeBinaryMaxHeap}, caps::Vector{Int})
+function convert_into_matched(num_props::Int, resp_prefs::Vector{Vector{Int}}, resp_matched_ranks::Vector{FixedSizeBinaryMaxHeap}, caps::Vector{Int})
+    prop_matched = zeros(Int, num_props)
+    resp_matched = Array{Int}(sum(caps))
     ctr = 1
     for j in 1:length(resp_matched_ranks)
         for k in 1:caps[j]
@@ -23,6 +27,7 @@ function adjust_matched!(resp_prefs::Vector{Vector{Int}}, prop_matched::Vector{I
             ctr += 1
         end
     end
+    return prop_matched, resp_matched
 end
 
 function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}})
@@ -35,13 +40,10 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector
     num_props = length(prop_prefs)
     num_resps = length(resp_prefs)
 
-    resp_ranks = zeros(UInt16, num_props, num_resps)
-    create_ranks!(resp_prefs, resp_ranks)
+    resp_ranks = create_resp_ranks(num_props, num_resps, resp_prefs)
 
     prop_ptrs = ones(UInt16, num_props)
     resp_matched_ranks = [FixedSizeBinaryMaxHeap(caps[j]) for j in 1:num_resps]
-    prop_matched = zeros(Int, num_props)
-    resp_matched = Array{Int}(sum(caps))
     prop_unmatched = Array{Int}(num_props)
     for i in 1:num_props
         prop_unmatched[i] = i
@@ -80,7 +82,7 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector
         end
     end
 
-    adjust_matched!(resp_prefs, prop_matched, resp_matched, resp_matched_ranks, caps)
+    prop_matched, resp_matched = convert_into_matched(num_props, resp_prefs, resp_matched_ranks, caps)
     indptr = Array{Int}(num_resps+1)
     indptr[1] = 1
     for j in 1:num_resps
