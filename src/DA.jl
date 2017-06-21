@@ -1,6 +1,6 @@
 # WHAT IF caps[i] = 0
 module DA
-    export deferred_acceptance, generate_random_prefs
+    export deferred_acceptance, generate_random_prefs, deferred_acceptance_rev, deferred_acceptance_rev_offheap
 
 using DataStructures: binary_maxheap, length, pop!, push!, top
 
