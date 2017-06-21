@@ -10,31 +10,25 @@ module
 
 ### DA.deferred_acceptance
 
-#### (m_prefs, f_prefs[, caps]) -> matched_males_list, matched_females_list[, indptr]
+#### (prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}}[, resp_caps::Vector{Int}[, prop_caps::Vector{Int}]]) -> prop_matched, resp_matched[, resp_indptr[, prop_indptr]]
 
 call DA algorithm with given arguments
 
-`m_prefs` -- 1-d array of arrays
-
-`f_prefs` -- 1-d array of arrays
-
 ### DA.generate_random_prefs
 
-#### (m, n) -> (m_prefs, f_prefs)
+#### (num_props::Int, num_resps::Int) -> (prop_prefs, resp_prefs)
 
 generates preference data
-
-`m` -- number of males
-
-`n` -- number of females
 
 ## Example
 
 ```julia
 using DA
 
-m, n = 100, 100
-m_prefs, f_prefs = generate_random_prefs(m, n)
+num_props, num_resps = 100, 100
+prop_prefs, resp_prefs = generate_random_prefs(num_props, num_resps)
 
-m_matched, f_matched = deferred_acceptance(m_prefs, f_prefs)
+prop_matched, resp_matched = deferred_acceptance(prop_prefs, resp_prefs)
 ```
+
+num_props, num_resps must be less than 2^16-1
