@@ -40,7 +40,7 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector
 
     prop_ptrs = ones(UInt16, num_props)
     resp_matched_ranks = [FixedSizeBinaryMaxHeap(caps[j]) for j in 1:num_resps]
-    prop_matched = Array(Int, num_props)
+    prop_matched = zeros(Int, num_props)
     resp_matched = Array(Int, sum(caps))
     prop_unmatched = Array(Int, num_props)
     for i in 1:num_props
