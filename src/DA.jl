@@ -4,11 +4,11 @@ module DA
 
 using DataStructures: binary_maxheap, length, pop!, push!, top
 
-type FixedSizeBinaryMaxHeap
+mutable struct FixedSizeBinaryMaxHeap
     heap::Array{Int}
     ind::Int
     max_length::Int
-    FixedSizeBinaryMaxHeap(m_max::Int) = new(Array(Int, m_max), 0, m_max)
+    FixedSizeBinaryMaxHeap(m_max::Int) = new(Array{Int}(m_max), 0, m_max)
 end
 
 function Base.length(bmh::FixedSizeBinaryMaxHeap)
@@ -119,7 +119,7 @@ function deferred_acceptance(m_prefs::Vector{Vector{Int}}, f_prefs::Vector{Vecto
     m_pointers = ones(Int, m)
     f_matched = fill(m+1, n)
     m_matched = zeros(Int, m)
-    m_searching = Array(Int, m)
+    m_searching = Array{Int}(m)
     for i in 1:m
         m_searching[i] = i
     end
@@ -207,8 +207,8 @@ function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Ve
     prop_ptrs = ones(Int, num_props)
     resp_matched_ranks = [FixedSizeBinaryMaxHeap(caps[j]) for j in 1:num_resps]
     prop_matched = zeros(Int, num_props)
-    resp_matched = Array(Int, sum(caps))
-    prop_unmatched = Array(Int, num_props)
+    resp_matched = Array{Int}(sum(caps))
+    prop_unmatched = Array{Int}(num_props)
     for i in 1:num_props
         prop_unmatched[i] = i
     end
@@ -241,7 +241,7 @@ function deferred_acceptance_rev(prop_prefs::Vector{Vector{Int}}, resp_prefs::Ve
     end
 
     adjust_matched_rev!(resp_prefs, prop_matched, resp_matched, resp_matched_ranks, caps)
-    indptr = Array(Int, num_resps+1)
+    indptr = Array{Int}(num_resps+1)
     indptr[1] = 1
     for j in 1:num_resps
         indptr[j+1] = indptr[j] + caps[j]
@@ -259,9 +259,9 @@ function deferred_acceptance_rev_offheap(prop_prefs::Vector{Vector{Int}}, resp_p
 
     prop_ptrs = ones(Int, num_props)
     resp_matched_ranks = [binary_maxheap(Int) for j in 1:num_resps]
-    prop_matched = Array(Int, num_props)
-    resp_matched = Array(Int, sum(caps))
-    prop_unmatched = Array(Int, num_props)
+    prop_matched = Array{Int}(num_props)
+    resp_matched = Array{Int}(sum(caps))
+    prop_unmatched = Array{Int}(num_props)
     for i in 1:num_props
         prop_unmatched[i] = i
     end
@@ -298,7 +298,7 @@ function deferred_acceptance_rev_offheap(prop_prefs::Vector{Vector{Int}}, resp_p
     end
 
     adjust_matched_rev!(resp_prefs, prop_matched, resp_matched, resp_matched_ranks, caps)
-    indptr = Array(Int, num_resps+1)
+    indptr = Array{Int}(num_resps+1)
     indptr[1] = 1
     for j in 1:num_resps
         indptr[j+1] = indptr[j] + caps[j]
@@ -342,7 +342,7 @@ function call_match{T <: Integer}(m_prefs::Array{T, 2}, f_prefs::Array{T, 2}, ca
 end
 
 @inbounds function get_ranks{T <: Integer}(prefs::Array{T, 2})
-    ranks = Array(eltype(prefs), size(prefs))
+    ranks = Array{eltype(prefs)}(size(prefs))
     for j in 1:size(prefs, 2)
         for (r, i) in enumerate(prefs[:, j])
             if i != 0
@@ -358,7 +358,7 @@ end
 function convert_pointer_to_list(m::Int, n::Int, f_pointers, f_prefs, caps)
     f_matched = zeros(Int, sum(caps))
     m_matched = zeros(Int, m)
-    indptr = Array(Int, n+1)
+    indptr = Array{Int}(n+1)
     i::Int = 0
     indptr[1] = 1
     for i in 1:n
@@ -434,8 +434,8 @@ function da_match{T <: Integer}(m::Int, n::Int, f_ranks::Array{T, 2}, m_prefs::A
 end
 
 function generate_random_prefs{T <: Integer}(m::T, n::T)
-    m_prefs = Array(Vector{Int}, m)
-    f_prefs = Array(Vector{Int}, n)
+    m_prefs = Array{Vector{Int}}(m)
+    f_prefs = Array{Vector{Int}}(n)
     for i in 1:m
         m_prefs[i] = shuffle(collect(1:n))
     end
