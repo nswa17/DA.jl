@@ -1,9 +1,9 @@
 module DATools
 
-    type FixedSizeBinaryMaxHeap
+    mutable struct FixedSizeBinaryMaxHeap
         heap::Array{UInt16}
         ind::UInt16
-        FixedSizeBinaryMaxHeap(m_max::Int) = new(Array(UInt16, m_max), 0)
+        FixedSizeBinaryMaxHeap(m_max::Int) = new(Array{UInt16}(m_max), 0)
     end
 
     function Base.length(bmh::FixedSizeBinaryMaxHeap)

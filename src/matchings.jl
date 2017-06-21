@@ -41,8 +41,8 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector
     prop_ptrs = ones(UInt16, num_props)
     resp_matched_ranks = [FixedSizeBinaryMaxHeap(caps[j]) for j in 1:num_resps]
     prop_matched = zeros(Int, num_props)
-    resp_matched = Array(Int, sum(caps))
-    prop_unmatched = Array(Int, num_props)
+    resp_matched = Array{Int}(sum(caps))
+    prop_unmatched = Array{Int}(num_props)
     for i in 1:num_props
         prop_unmatched[i] = i
     end
@@ -81,7 +81,7 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector
     end
 
     adjust_matched!(resp_prefs, prop_matched, resp_matched, resp_matched_ranks, caps)
-    indptr = Array(Int, num_resps+1)
+    indptr = Array{Int}(num_resps+1)
     indptr[1] = 1
     for j in 1:num_resps
         indptr[j+1] = indptr[j] + caps[j]
@@ -92,9 +92,9 @@ end
 function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}}, resp_caps::Vector{Int}, prop_caps::Vector{Int})
     v_num_props = sum(prop_caps)# number of virtual props
     num_props = length(prop_prefs)
-    refs = Array(Vector{Int}, v_num_props)
-    refs_rev = Array(Int, v_num_props)
-    prop_indptr = Array(Int, num_props+1)
+    refs = Array{Vector{Int}}(v_num_props)
+    refs_rev = Array{Int}(v_num_props)
+    prop_indptr = Array{Int}(num_props+1)
 
     prop_indptr[1] = 1
     for i in 1:num_props
@@ -106,7 +106,7 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector
         refs_rev[prop_indptr[i]:prop_indptr[i+1]-1] = i
     end
 
-    v_prop_prefs = Array(Vector{Int}, v_num_props)
+    v_prop_prefs = Array{Vector{Int}}(v_num_props)
     for (i, prop_pref) in enumerate(prop_prefs)
         for v_i in refs[i]
             v_prop_prefs[v_i] = prop_pref
@@ -134,8 +134,8 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector
 end
 
 function generate_random_prefs{T <: Integer}(m::T, n::T)
-    m_prefs = Array(Vector{Int}, m)
-    f_prefs = Array(Vector{Int}, n)
+    m_prefs = Array{Vector{Int}}(m)
+    f_prefs = Array{Vector{Int}}(n)
     for i in 1:m
         m_prefs[i] = shuffle(collect(1:n))
     end
