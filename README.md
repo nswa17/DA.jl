@@ -14,7 +14,7 @@ module
 
 call DA algorithm with given arguments
 
-num_props, num_resps, sum(resp_caps), sum(prop_caps) must all be less than 2^16-1
+num_props, num_resps, sum(prop_caps) must all be less than 2^16-1
 
 ### DA.generate_random_prefs
 
