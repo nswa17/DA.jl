@@ -1,7 +1,7 @@
 using DA
 using Base.Test
 
-const _deferred_acceptance = deferred_acceptance
+const _deferred_acceptance = DA.deferred_acceptance
 const test_matrix = false
 
 function mat2vecs{T<:Integer}(prefs::Matrix{T})
@@ -217,11 +217,11 @@ end
 
     @testset "many-to-one: Vector of Vectors" begin
         for d in matchings_many_to_one
-            s_prefs, c_prefs = mat2vecs.(d["s_prefs"], d["c_prefs"])
+            s_prefs, c_prefs = mat2vecs.([d["s_prefs"], d["c_prefs"]])
 
             # Default (Student proposal)
             s_matches, c_matches, indptr =
-                deferred_acceptance(s_prefs, c_prefs, d["caps"])
+                _deferred_acceptance(s_prefs, c_prefs, d["caps"])
             sort_matches!(c_matches, indptr)
             @test s_matches == d["s_matches_s_opt"]
             @test c_matches == d["c_matches_s_opt"]
@@ -252,7 +252,7 @@ end
 
                 # Default (Student proposal)
                 s_matches, c_matches, indptr =
-                    deferred_acceptance(s_prefs, c_prefs, d["caps"])
+                    _deferred_acceptance(s_prefs, c_prefs, d["caps"])
                 sort_matches!(c_matches, indptr)
                 @test s_matches == d["s_matches_s_opt"]
                 @test c_matches == d["c_matches_s_opt"]
