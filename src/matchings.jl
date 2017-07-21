@@ -143,14 +143,14 @@ function deferred_acceptance(prop_prefs::Vector{Vector{Int}},
     return prop_matched, resp_matched, resp_indptr, prop_indptr
 end
 
-function generate_random_prefs{T <: Integer}(m::T, n::T)
-    m_prefs = Vector{Vector{Int}}(m)
-    f_prefs = Vector{Vector{Int}}(n)
-    for i in 1:m
-        m_prefs[i] = shuffle(collect(1:n))
+function generate_random_prefs{T <: Integer}(num_props::T, num_resps::T; max_prop_pref::Int=num_resps, max_resp_pref::Int=num_props)
+    prop_prefs = Vector{Vector{Int}}(num_props)
+    resp_prefs = Vector{Vector{Int}}(num_resps)
+    for i in 1:num_props
+        prop_prefs[i] = collect(Iterators.take(shuffle(collect(1:num_resps)), max_prop_pref))
     end
-    for j in 1:n
-        f_prefs[j] = shuffle(collect(1:m))
+    for j in 1:num_resps
+        resp_prefs[j] = collect(Iterators.take(shuffle(collect(1:num_props)), max_resp_pref))
     end
-    return m_prefs, f_prefs
+    return prop_prefs, resp_prefs
 end
